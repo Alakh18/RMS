@@ -1,5 +1,6 @@
-import { useState } from 'react'
 import './App.css'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 
 const PRODUCTS = [
   {
@@ -65,69 +66,10 @@ const PRODUCTS = [
 ];
 
 function App() {
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
   return (
     <div className="bg-background-light text-[#0d131c] font-display antialiased overflow-x-hidden selection:bg-primary/20 selection:text-primary">
-      {/* Sticky Glass Header */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300">
-        <div className="max-w-7xl mx-auto glass-panel rounded-full px-6 py-3 flex items-center justify-between shadow-glass">
-          {/* Logo */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="size-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-white shadow-glow">
-              <span className="material-symbols-outlined text-[20px]">hexagon</span>
-            </div>
-            <span className="text-lg font-bold tracking-tight text-[#0d131c]">RentalEco</span>
-          </div>
-
-          {/* Center Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
-            <input 
-              type="text" 
-              placeholder="Search for gear..." 
-              className="w-full bg-slate-100/50 border border-slate-200 rounded-full py-2.5 pl-5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
-            />
-            <button className="absolute right-1 top-1 w-9 h-9 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-500 hover:text-primary hover:shadow transition-all">
-              <span className="material-symbols-outlined text-[20px]">search</span>
-            </button>
-          </div>
-
-          {/* Right Icons */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Wishlist */}
-            <button className="p-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-slate-50">
-              <span className="material-symbols-outlined">favorite</span>
-            </button>
-
-            {/* Cart with Badge */}
-            <button className="p-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-slate-50 relative">
-              <span className="material-symbols-outlined">shopping_cart</span>
-              <span className="absolute top-0 right-0 size-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white">0</span>
-            </button>
-
-            {/* Profile Avatar */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="size-9 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm hover:border-primary transition-all focus:outline-none"
-              >
-                <img src="https://ui-avatars.com/api/?name=Alex+Doe&background=257bf4&color=fff" alt="Profile" className="w-full h-full object-cover" />
-              </button>
-              
-              {/* Dropdown Menu */}
-              {isProfileOpen && (
-                <div className="absolute right-0 top-full mt-3 w-48 bg-white glass-panel rounded-xl shadow-xl overflow-hidden py-1 border border-white/50 animate-in fade-in slide-in-from-top-2 z-50">
-                  <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">My Account</a>
-                  <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">My Orders</a>
-                  <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Settings</a>
-                  <div className="h-px bg-slate-100 my-1"></div>
-                  <a href="#" className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">Logout</a>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Navbar Component */}
+      <Navbar />
 
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center px-4 pt-32 pb-20 hero-gradient overflow-hidden">
@@ -552,107 +494,8 @@ function App() {
         </div>
       </section>
 
-      {/* Simple Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-16 rounded-t-2xl mx-4 mb-4">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="size-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-[20px]">hexagon</span>
-              </div>
-              <span className="text-xl font-bold text-white">RentalEco</span>
-            </div>
-            <p className="text-sm leading-relaxed mb-6">
-              Empowering businesses and creators with the world&apos;s most flexible asset rental ecosystem.
-            </p>
-            <div className="flex gap-4">
-              <a className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary transition-colors text-white" href="#">
-                <span className="text-xs font-bold">X</span>
-              </a>
-              <a className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary transition-colors text-white" href="#">
-                <span className="text-xs font-bold">in</span>
-              </a>
-              <a className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary transition-colors text-white" href="#">
-                <span className="text-xs font-bold">Ig</span>
-              </a>
-            </div>
-          </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Platform</h4>
-            <ul className="flex flex-col gap-3 text-sm">
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Browse Inventory
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Get a Quote
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Vendor Portal
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Admin Dashboard
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Company</h4>
-            <ul className="flex flex-col gap-3 text-sm">
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Press
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Contact
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">Legal</h4>
-            <ul className="flex flex-col gap-3 text-sm">
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a className="hover:text-white transition-colors" href="#">
-                  Cookie Policy
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-slate-800 text-xs text-center md:text-left flex flex-col md:flex-row justify-between items-center">
-          <p>© 2024 RentalEco Inc. All rights reserved.</p>
-          <p className="mt-2 md:mt-0">Made with ❤️ for premium rentals.</p>
-        </div>
-      </footer>
+      {/* Footer Component */}
+      <Footer />
     </div>
   )
 }
