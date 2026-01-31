@@ -25,8 +25,16 @@ const Login = () => {
       if (response.data && response.data.token) {
         // Save token and user info
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
+
+        const profileOverrides = JSON.parse(localStorage.getItem('profileOverrides')) || {};
+        const userEmail = response.data.user?.email;
+        const emailKey = userEmail ? userEmail.trim().toLowerCase() : null;
+        const mergedUser = emailKey && profileOverrides[emailKey]
+          ? { ...response.data.user, ...profileOverrides[emailKey] }
+          : response.data.user;
+
+        localStorage.setItem('user', JSON.stringify(mergedUser));
+
         // Redirect to Home
         navigate('/');
       }
