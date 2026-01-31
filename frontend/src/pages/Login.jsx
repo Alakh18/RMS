@@ -38,9 +38,13 @@ const handleSubmit = async (e) => {
 
       // 2. ✅ CHECK ROLE & REDIRECT CORRECTLY
       if (data.user.role === 'ADMIN') {
-        navigate('/admin'); // Go to Dashboard
+        navigate('/admin/dashboard');
+      } else if (data.user.role === 'VENDOR') {
+        navigate('/vendor/dashboard');
+      } else if (data.user.role === 'CUSTOMER') {
+        navigate('/');
       } else {
-        navigate('/');      // Go to Home
+        navigate('/');
       }
 
     } else {

@@ -4,25 +4,29 @@ import { fetchDashboardStats } from '../services/vendorApi';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
-    totalRevenue: 0,
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: '0',
     activeRentals: 0,
     pendingReturns: 0,
-    monthlyEarnings: 0,
+    monthlyEarnings: '0',
+    recentOrders: [],
+    pendingActions: [],
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Simulated data for demo
-        setStats({
-          totalRevenue: 45230,
-          activeRentals: 12,
-          pendingReturns: 3,
-          monthlyEarnings: 8950,
-        });
-      } catch (error) {
-        console.error('Error loading stats:', error);
+        setLoading(true);
+        const response = await fetchDashboardStats();
+        if (response.success) {
+          setStats(response.data);
+        }
+      } catch (err) {
+        console.error('Error loading stats:', err);
+        setError('Failed to load dashboard statistics');
       } finally {
         setLoading(false);
       }
@@ -33,32 +37,32 @@ const Dashboard = () => {
 
   const statCards = [
     {
-      title: 'Total Revenue',
-      value: `₹${stats.totalRevenue.toLocaleString()}`,
-      icon: 'attach_money',
-      color: 'bg-green-50',
-      textColor: 'text-green-700',
-    },
-    {
-      title: 'Active Rentals',
-      value: stats.activeRentals,
-      icon: 'shopping_cart',
+      title: 'Total Products',
+      value: stats.totalProducts,
+      icon: 'inventory_2',
       color: 'bg-blue-50',
       textColor: 'text-blue-700',
     },
     {
-      title: 'Pending Returns',
-      value: stats.pendingReturns,
-      icon: 'assignment_return',
-      color: 'bg-orange-50',
-      textColor: 'text-orange-700',
+      title: 'Total Orders',
+      value: stats.totalOrders,
+      icon: 'shopping_cart',
+      color: 'bg-green-50',
+      textColor: 'text-green-700',
     },
     {
-      title: 'This Month',
-      value: `₹${stats.monthlyEarnings.toLocaleString()}`,
-      icon: 'trending_up',
+      title: 'Total Revenue',
+      value: `₹${parseFloat(stats.totalRevenue).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`,
+      icon: 'attach_money',
       color: 'bg-purple-50',
       textColor: 'text-purple-700',
+    },
+    {
+      title: 'Active Rentals',
+      value: stats.activeRentals,
+      icon: 'local_shipping',
+      color: 'bg-orange-50',
+      textColor: 'text-orange-700',
     },
   ];
 
@@ -66,6 +70,14 @@ const Dashboard = () => {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-slate-600">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-red-600">{error}</div>
       </div>
     );
   }
@@ -96,37 +108,71 @@ const Dashboard = () => {
         {/* Recent Orders */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <h2 className="text-lg font-bold text-slate-900 mb-4">Recent Orders</h2>
-          <div className="space-y-4">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-slate-900">Order #{1000 + item}</p>
-                  <p className="text-sm text-slate-500">2 days ago</p>
+          {stats.recentOrders.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">No recent orders</p>
+          ) : (
+            <div className="space-y-4">
+              {stats.recentOrders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-slate-900">{order.orderNumber || `#${order.id}`}</p>
+                    <p className="text-sm text-slate-500">
+                      {order.customer} • {order.items} {order.items === 1 ? 'item' : 'items'}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      order.status === 'PICKED_UP'
+                        ? 'bg-blue-100 text-blue-700'
+                        : order.status === 'RETURNED'
+                          ? 'bg-green-100 text-green-700'
+                          : order.status === 'CONFIRMED'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {order.status}
+                  </span>
                 </div>
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                  Active
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Pending Actions */}
         <div className="bg-white rounded-lg border border-slate-200 p-6">
           <h2 className="text-lg font-bold text-slate-900 mb-4">Pending Actions</h2>
-          <div className="space-y-4">
-            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-              <p className="text-sm font-medium text-orange-900">3 Returns Awaiting Acceptance</p>
-              <p className="text-xs text-orange-700 mt-1">Process these by end of day</p>
+          {stats.pendingActions.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">No pending actions</p>
+          ) : (
+            <div className="space-y-4">
+              {stats.pendingActions.map((action, idx) => (
+                <div key={idx} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <p className="text-sm font-medium text-orange-900">{action.message}</p>
+                </div>
+              ))}
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm font-medium text-blue-900">5 Quotations Pending Review</p>
-              <p className="text-xs text-blue-700 mt-1">Approve or reject</p>
-            </div>
-            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-              <p className="text-sm font-medium text-purple-900">2 Pickups Scheduled Today</p>
-              <p className="text-xs text-purple-700 mt-1">Generate documents</p>
-            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Monthly Summary */}
+      <div className="bg-white rounded-lg border border-slate-200 p-6">
+        <h2 className="text-lg font-bold text-slate-900 mb-4">This Month</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <p className="text-sm font-medium text-slate-600">Monthly Earnings</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">
+              ₹{parseFloat(stats.monthlyEarnings).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-600">Pending Returns</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{stats.pendingReturns}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-600">Active Products</p>
+            <p className="text-3xl font-bold text-slate-900 mt-2">{stats.totalProducts}</p>
           </div>
         </div>
       </div>

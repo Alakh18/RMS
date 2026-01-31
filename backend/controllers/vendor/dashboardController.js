@@ -4,27 +4,182 @@ const prisma = new PrismaClient();
 
 /**
  * Get vendor dashboard statistics
- * Returns: total revenue, active rentals, pending returns, monthly earnings
+ * Returns: total products, total orders, total revenue
+ * All metrics are calculated from real database data
  */
 const getDashboardStats = async (req, res) => {
   try {
     const vendorId = req.user.userId;
 
-    // Simulated data - can be extended with actual database queries
+    // 1. Get total products count
+    const totalProducts = await prisma.product.count({
+      where: {
+        vendorId: vendorId,
+      },
+    });
+
+    // 2. Get vendor's product IDs
+    const vendorProducts = await prisma.product.findMany({
+      where: {
+        vendorId: vendorId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const vendorProductIds = vendorProducts.map(p => p.id);
+
+    // 3. Get total orders (orders containing vendor's products)
+    const totalOrders = await prisma.order.count({
+      where: {
+        items: {
+          some: {
+            productId: {
+              in: vendorProductIds,
+            },
+          },
+        },
+      },
+    });
+
+    // 4. Calculate total revenue from all orders containing vendor's products
+    const ordersWithRevenue = await prisma.order.findMany({
+      where: {
+        items: {
+          some: {
+            productId: {
+              in: vendorProductIds,
+            },
+          },
+        },
+      },
+      select: {
+        totalAmount: true,
+      },
+    });
+
+    const totalRevenue = ordersWithRevenue.reduce((sum, order) => {
+      return sum + parseFloat(order.totalAmount);
+    }, 0);
+
+    // 5. Get recent orders (last 5)
+    const recentOrders = await prisma.order.findMany({
+      where: {
+        items: {
+          some: {
+            productId: {
+              in: vendorProductIds,
+            },
+          },
+        },
+      },
+      include: {
+        items: {
+          where: {
+            productId: {
+              in: vendorProductIds,
+            },
+          },
+        },
+        customer: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 5,
+    });
+
+    const transformedRecentOrders = recentOrders.map(order => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      date: order.createdAt,
+      customer: `${order.customer.firstName} ${order.customer.lastName}`,
+      items: order.items.length,
+      status: order.status,
+      total: order.totalAmount.toString(),
+    }));
+
+    // 6. Get active rentals (orders with status PICKED_UP)
+    const activeRentals = await prisma.order.count({
+      where: {
+        status: 'PICKED_UP',
+        items: {
+          some: {
+            productId: {
+              in: vendorProductIds,
+            },
+          },
+        },
+      },
+    });
+
+    // 7. Get pending returns (orders with status PICKED_UP but not yet RETURNED)
+    const pendingReturns = await prisma.order.count({
+      where: {
+        status: 'PICKED_UP',
+        items: {
+          some: {
+            productId: {
+              in: vendorProductIds,
+            },
+          },
+        },
+      },
+    });
+
+    // 8. Get this month's earnings
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const thisMonthOrders = await prisma.order.findMany({
+      where: {
+        createdAt: {
+          gte: monthStart,
+          lte: monthEnd,
+        },
+        items: {
+          some: {
+            productId: {
+              in: vendorProductIds,
+            },
+          },
+        },
+      },
+      select: {
+        totalAmount: true,
+      },
+    });
+
+    const monthlyEarnings = thisMonthOrders.reduce((sum, order) => {
+      return sum + parseFloat(order.totalAmount);
+    }, 0);
+
     const stats = {
-      totalRevenue: 45230,
-      activeRentals: 12,
-      pendingReturns: 3,
-      monthlyEarnings: 8950,
-      recentOrders: [
-        { id: 1001, date: '2026-01-28', items: 2, status: 'Active' },
-        { id: 1002, date: '2026-01-27', items: 1, status: 'Active' },
-        { id: 1003, date: '2026-01-25', items: 3, status: 'Returned' },
-      ],
+      totalProducts,
+      totalOrders,
+      totalRevenue: totalRevenue.toString(),
+      activeRentals,
+      pendingReturns,
+      monthlyEarnings: monthlyEarnings.toString(),
+      recentOrders: transformedRecentOrders,
       pendingActions: [
-        { type: 'returns', count: 3, message: '3 Returns Awaiting Acceptance' },
-        { type: 'quotations', count: 5, message: '5 Quotations Pending Review' },
-        { type: 'pickups', count: 2, message: '2 Pickups Scheduled Today' },
+        {
+          type: 'returns',
+          count: pendingReturns,
+          message: `${pendingReturns} ${pendingReturns === 1 ? 'Return' : 'Returns'} Awaiting Acceptance`,
+        },
+        {
+          type: 'active',
+          count: activeRentals,
+          message: `${activeRentals} Active ${activeRentals === 1 ? 'Rental' : 'Rentals'}`,
+        },
       ],
     };
 

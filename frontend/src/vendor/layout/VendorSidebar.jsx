@@ -6,7 +6,7 @@ const VendorSidebar = ({ isOpen, onToggle }) => {
   const location = useLocation();
 
   const menuItems = [
-    { label: 'Dashboard', path: '/vendor', icon: 'dashboard' },
+    { label: 'Dashboard', path: '/vendor/dashboard', icon: 'dashboard' },
     { label: 'Products', path: '/vendor/products', icon: 'inventory_2' },
     { label: 'Orders', path: '/vendor/orders', icon: 'shopping_cart' },
     { label: 'Quotations', path: '/vendor/quotations', icon: 'description' },

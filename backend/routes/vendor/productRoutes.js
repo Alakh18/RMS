@@ -7,6 +7,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  publishProduct,
 } = require('../../controllers/vendor/productController');
 
 // All product routes require vendor authentication
@@ -17,6 +18,9 @@ router.get('/', getVendorProducts);
 
 // POST /api/vendor/products
 router.post('/', createProduct);
+
+// PATCH /api/vendor/products/:productId/publish
+router.patch('/:productId/publish', publishProduct);
 
 // PUT /api/vendor/products/:productId
 router.put('/:productId', updateProduct);

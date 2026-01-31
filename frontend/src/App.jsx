@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import VendorSignup from './pages/VendorSignup'
 import AdminDashboard from './pages/AdminDashboard';
+import VendorRoutes from './vendor/VendorRoutes'
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -78,6 +79,9 @@ const PRODUCTS = [
 function App() {
   return (
     <Routes>
+      {/* Vendor Routes */}
+      <Route path="/vendor/*" element={<VendorRoutes />} />
+      
       {/* Customer Routes */}
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<Login />} />

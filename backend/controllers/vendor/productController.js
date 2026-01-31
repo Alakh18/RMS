@@ -3,39 +3,35 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
- * Get all vendor products
+ * Get all vendor products with attributes
+ * Only returns products belonging to the authenticated vendor
  */
 const getVendorProducts = async (req, res) => {
   try {
     const vendorId = req.user.userId;
 
-    // Simulated data
-    const products = [
-      {
-        id: 1,
-        name: 'Sony FX6 Cinema Camera',
-        category: 'Cameras',
-        price: 145,
-        pricing: 'Day',
-        quantity: 5,
-        reserved: 2,
-        status: 'Published',
+    const products = await prisma.product.findMany({
+      where: {
+        vendorId: vendorId,
       },
-      {
-        id: 2,
-        name: 'MacBook Pro 16" M3',
-        category: 'Computers',
-        price: 85,
-        pricing: 'Day',
-        quantity: 3,
-        reserved: 1,
-        status: 'Published',
+      include: {
+        attributes: true,
       },
-    ];
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Transform Decimal to string for JSON serialization
+    const transformedProducts = products.map(product => ({
+      ...product,
+      price: product.price.toString(),
+      securityDeposit: product.securityDeposit.toString(),
+    }));
 
     res.status(200).json({
       success: true,
-      data: products,
+      data: transformedProducts,
     });
   } catch (error) {
     console.error('Get Products Error:', error);
@@ -44,79 +40,193 @@ const getVendorProducts = async (req, res) => {
 };
 
 /**
- * Create a new product
+ * Create a new product with optional attributes
+ * vendorId is extracted from authenticated user, never from request body
  */
 const createProduct = async (req, res) => {
   try {
     const vendorId = req.user.userId;
-    const { name, category, hourlyRate, dailyRate, weeklyRate, quantity, description } = req.body;
+    const { name, description, brand, pricingType, price, securityDeposit, quantity, isRentable, isPublished, attributes } = req.body;
 
-    // Validate required fields
-    if (!name || !category || !dailyRate || !quantity) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Validate required fields based on schema
+    if (!name || !price || quantity === undefined) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['name', 'price', 'quantity'],
+      });
     }
 
-    // Simulated product creation
-    const newProduct = {
-      id: Math.floor(Math.random() * 10000),
-      name,
-      category,
-      hourlyRate: hourlyRate || 0,
-      dailyRate,
-      weeklyRate: weeklyRate || dailyRate * 6,
-      quantity,
-      description: description || '',
-      reserved: 0,
-      status: 'Draft',
-      vendorId,
+    // Validate pricingType if provided
+    const validPricingTypes = ['HOURLY', 'DAILY', 'WEEKLY', 'CUSTOM'];
+    if (pricingType && !validPricingTypes.includes(pricingType)) {
+      return res.status(400).json({
+        error: `Invalid pricingType. Must be one of: ${validPricingTypes.join(', ')}`,
+      });
+    }
+
+    // Create product with attributes in transaction
+    const newProduct = await prisma.product.create({
+      data: {
+        name,
+        description: description || null,
+        brand: brand || null,
+        pricingType: pricingType || 'DAILY',
+        price: parseFloat(price),
+        securityDeposit: securityDeposit ? parseFloat(securityDeposit) : 0,
+        quantity: parseInt(quantity),
+        isRentable: isRentable !== undefined ? isRentable : true,
+        isPublished: isPublished !== undefined ? isPublished : false,
+        vendorId: vendorId,
+        attributes: {
+          create: (attributes || []).map(attr => ({
+            name: attr.name,
+            value: attr.value,
+          })),
+        },
+      },
+      include: {
+        attributes: true,
+      },
+    });
+
+    // Transform for response
+    const response = {
+      ...newProduct,
+      price: newProduct.price.toString(),
+      securityDeposit: newProduct.securityDeposit.toString(),
     };
 
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
-      data: newProduct,
+      data: response,
     });
   } catch (error) {
     console.error('Create Product Error:', error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Duplicate product name' });
+    }
     res.status(500).json({ error: 'Failed to create product' });
   }
 };
 
 /**
- * Update product details
+ * Update product details and attributes
+ * Vendor can only update their own products
  */
 const updateProduct = async (req, res) => {
   try {
+    const vendorId = req.user.userId;
     const { productId } = req.params;
-    const { name, category, dailyRate, quantity, status } = req.body;
+    const { name, description, brand, pricingType, price, securityDeposit, quantity, isRentable, isPublished, attributes } = req.body;
 
-    // Simulated update
-    const updatedProduct = {
-      id: productId,
-      name,
-      category,
-      dailyRate,
-      quantity,
-      status,
+    const productIdNum = parseInt(productId);
+
+    // Check if product exists and belongs to vendor
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        id: productIdNum,
+        vendorId: vendorId,
+      },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ error: 'Product not found or unauthorized' });
+    }
+
+    // Validate pricingType if provided
+    const validPricingTypes = ['HOURLY', 'DAILY', 'WEEKLY', 'CUSTOM'];
+    if (pricingType && !validPricingTypes.includes(pricingType)) {
+      return res.status(400).json({
+        error: `Invalid pricingType. Must be one of: ${validPricingTypes.join(', ')}`,
+      });
+    }
+
+    // Build update data - only include provided fields
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (brand !== undefined) updateData.brand = brand;
+    if (pricingType !== undefined) updateData.pricingType = pricingType;
+    if (price !== undefined) updateData.price = parseFloat(price);
+    if (securityDeposit !== undefined) updateData.securityDeposit = parseFloat(securityDeposit);
+    if (quantity !== undefined) updateData.quantity = parseInt(quantity);
+    if (isRentable !== undefined) updateData.isRentable = isRentable;
+    if (isPublished !== undefined) updateData.isPublished = isPublished;
+
+    // Update product and handle attributes
+    const updatedProduct = await prisma.product.update({
+      where: {
+        id: productIdNum,
+      },
+      data: {
+        ...updateData,
+        // Replace attributes if provided
+        ...(attributes && {
+          attributes: {
+            deleteMany: {},
+            create: attributes.map(attr => ({
+              name: attr.name,
+              value: attr.value,
+            })),
+          },
+        }),
+      },
+      include: {
+        attributes: true,
+      },
+    });
+
+    // Transform for response
+    const response = {
+      ...updatedProduct,
+      price: updatedProduct.price.toString(),
+      securityDeposit: updatedProduct.securityDeposit.toString(),
     };
 
     res.status(200).json({
       success: true,
       message: 'Product updated successfully',
-      data: updatedProduct,
+      data: response,
     });
   } catch (error) {
     console.error('Update Product Error:', error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Duplicate product name' });
+    }
     res.status(500).json({ error: 'Failed to update product' });
   }
 };
 
 /**
- * Delete product
+ * Delete product - cascades to attributes and order items
+ * Vendor can only delete their own products
  */
 const deleteProduct = async (req, res) => {
   try {
+    const vendorId = req.user.userId;
     const { productId } = req.params;
+
+    const productIdNum = parseInt(productId);
+
+    // Check if product exists and belongs to vendor
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        id: productIdNum,
+        vendorId: vendorId,
+      },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ error: 'Product not found or unauthorized' });
+    }
+
+    // Delete product (cascades to attributes and order items via schema)
+    await prisma.product.delete({
+      where: {
+        id: productIdNum,
+      },
+    });
 
     res.status(200).json({
       success: true,
@@ -128,9 +238,69 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+/**
+ * Publish/Unpublish a product
+ * PATCH /api/vendor/products/:productId/publish
+ */
+const publishProduct = async (req, res) => {
+  try {
+    const vendorId = req.user.userId;
+    const { productId } = req.params;
+    const { isPublished } = req.body;
+
+    if (isPublished === undefined) {
+      return res.status(400).json({ error: 'isPublished field is required' });
+    }
+
+    const productIdNum = parseInt(productId);
+
+    // Check if product exists and belongs to vendor
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        id: productIdNum,
+        vendorId: vendorId,
+      },
+    });
+
+    if (!existingProduct) {
+      return res.status(404).json({ error: 'Product not found or unauthorized' });
+    }
+
+    // Update publish status
+    const updatedProduct = await prisma.product.update({
+      where: {
+        id: productIdNum,
+      },
+      data: {
+        isPublished: Boolean(isPublished),
+      },
+      include: {
+        attributes: true,
+      },
+    });
+
+    // Transform for response
+    const response = {
+      ...updatedProduct,
+      price: updatedProduct.price.toString(),
+      securityDeposit: updatedProduct.securityDeposit.toString(),
+    };
+
+    res.status(200).json({
+      success: true,
+      message: 'Product published status updated',
+      data: response,
+    });
+  } catch (error) {
+    console.error('Publish Product Error:', error);
+    res.status(500).json({ error: 'Failed to update publish status' });
+  }
+};
+
 module.exports = {
   getVendorProducts,
   createProduct,
   updateProduct,
   deleteProduct,
+  publishProduct,
 };

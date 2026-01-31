@@ -27,7 +27,8 @@ const VendorRoutes = () => {
     <ProtectedVendorRoute>
       <VendorLayout>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Navigate to="/vendor/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/products" element={<Products />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/quotations" element={<Quotations />} />
@@ -36,7 +37,7 @@ const VendorRoutes = () => {
           <Route path="/returns" element={<Returns />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/vendor" replace />} />
+          <Route path="*" element={<Navigate to="/vendor/dashboard" replace />} />
         </Routes>
       </VendorLayout>
     </ProtectedVendorRoute>

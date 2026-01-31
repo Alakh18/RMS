@@ -60,6 +60,20 @@ export const updateProduct = async (productId, productData) => {
   }
 };
 
+export const publishProduct = async (productId, isPublished) => {
+  try {
+    const response = await axios.patch(
+      `${API_BASE_URL}/products/${productId}/publish`,
+      { isPublished },
+      { headers: getAuthHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error publishing product:', error);
+    throw error;
+  }
+};
+
 export const deleteProduct = async (productId) => {
   try {
     const response = await axios.delete(`${API_BASE_URL}/products/${productId}`, {
