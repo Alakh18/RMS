@@ -1,8 +1,11 @@
+// backend/controllers/authController.js
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key'; // Move to .env in production
 
+// --- SIGNUP LOGIC ---
 const signup = async (req, res) => {
   try {
     const { 
@@ -12,11 +15,11 @@ const signup = async (req, res) => {
       password, 
       role, 
       companyName, 
-      gstin, 
-      productCategory 
+      gstin,            // Matches schema field exactly
+      productCategory   // Matches schema field exactly
     } = req.body;
 
-    // 1. Check if user already exists
+    // 1. Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -30,7 +33,7 @@ const signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 3. Create User
-    // We only add vendor details if the role is explicitly VENDOR
+    // We strictly follow the schema fields here
     const newUser = await prisma.user.create({
       data: {
         firstName,
@@ -38,13 +41,14 @@ const signup = async (req, res) => {
         email,
         password: hashedPassword,
         role: role || 'CUSTOMER',
+        // Only add these if role is VENDOR (Prisma allows nulls as per schema)
         companyName: role === 'VENDOR' ? companyName : null,
         gstin: role === 'VENDOR' ? gstin : null,
         productCategory: role === 'VENDOR' ? productCategory : null,
       },
     });
 
-    // 4. Respond (Exclude password from response)
+    // 4. Respond
     res.status(201).json({
       message: 'User created successfully',
       user: {
