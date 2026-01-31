@@ -8,6 +8,7 @@ import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ProductPage from './pages/ProductPage'
+import Profile from './pages/Profile'
 
 const PRODUCTS = [
   {
@@ -80,6 +81,7 @@ function App() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/vendor-signup" element={<VendorSignup />} />
       <Route path="/product" element={<ProductPage />} />
+      <Route path="/profile" element={<Profile />} />
     </Routes>
   )
 }

@@ -1,13 +1,27 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 
 function Navbar() {
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleProfileClick = () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Redirect to profile if user is logged in
+      navigate('/profile');
+    } else {
+      // Redirect to login if user is not logged in
+      navigate('/login');
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3 sm:py-4 transition-all duration-300">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg border border-slate-200 hover:shadow-xl transition-shadow duration-300">
         {/* Logo */}
-        <div className="flex items-center gap-3 shrink-0 group cursor-pointer">
+        <div 
+          className="flex items-center gap-3 shrink-0 group cursor-pointer" 
+          onClick={() => navigate('/')}
+        >
           <div className="size-9 sm:size-10 bg-gradient-to-br from-primary via-primary to-accent rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-primary/50 group-hover:scale-105 transition-all duration-300">
             <span className="material-symbols-outlined text-[22px] sm:text-[24px]">hexagon</span>
           </div>
@@ -63,45 +77,20 @@ function Navbar() {
           {/* Profile Avatar */}
           <div className="relative ml-1 sm:ml-2">
             <button 
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              onClick={handleProfileClick}
               className="size-9 sm:size-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden border-2 border-white shadow-md hover:border-primary hover:shadow-lg hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
-              <img src="https://ui-avatars.com/api/?name=Alex+Doe&background=257bf4&color=fff" alt="Profile" className="w-full h-full object-cover" />
+              <img 
+                src="https://ui-avatars.com/api/?name=User&background=257bf4&color=fff" 
+                alt="Profile" 
+                className="w-full h-full object-cover" 
+              />
             </button>
-            
-            {/* Enhanced Dropdown Menu */}
-            {isProfileOpen && (
-              <div className="absolute right-0 top-full mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden py-2 border border-slate-100 animate-in fade-in slide-in-from-top-2 z-50">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <p className="text-sm font-semibold text-slate-800">Alex Doe</p>
-                  <p className="text-xs text-slate-500 mt-0.5">alex.doe@email.com</p>
-                </div>
-                <div className="py-1">
-                  <a href="#" className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-primary/10 hover:text-primary transition-all duration-200 group">
-                    <span className="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">person</span>
-                    <span>My Account</span>
-                  </a>
-                  <a href="#" className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-primary/10 hover:text-primary transition-all duration-200 group">
-                    <span className="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">shopping_bag</span>
-                    <span>My Orders</span>
-                  </a>
-                  <a href="#" className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-primary/10 hover:text-primary transition-all duration-200 group">
-                    <span className="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">settings</span>
-                    <span>Settings</span>
-                  </a>
-                </div>
-                <div className="h-px bg-slate-100 my-1"></div>
-                <a href="#" className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all duration-200 group">
-                  <span className="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">logout</span>
-                  <span className="font-medium">Logout</span>
-                </a>
-              </div>
-            )}
           </div>
         </div>
       </div>
     </nav>
-  )
+  );
 }
 
-export default Navbar
+export default Navbar;
