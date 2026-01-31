@@ -10,6 +10,51 @@ const ProductsPage = () => {
   const [sortBy, setSortBy] = useState('popular')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPeriod, setSelectedPeriod] = useState('day')
+  const [wishlistIds, setWishlistIds] = useState([])
+
+  // Load wishlist on mount
+  useEffect(() => {
+    const existingWishlist = JSON.parse(localStorage.getItem('wishlist')) || []
+    setWishlistIds(existingWishlist.map(item => item.id))
+  }, [])
+
+  // Toggle wishlist function
+  const handleToggleWishlist = (e, product) => {
+    e.preventDefault() // Prevent navigation to product page
+    e.stopPropagation() // Stop event bubbling
+    
+    const existingWishlist = JSON.parse(localStorage.getItem('wishlist')) || []
+    const existsIndex = existingWishlist.findIndex(item => item.id === product.id)
+    
+    if (existsIndex !== -1) {
+      // Remove from wishlist
+      const updatedWishlist = existingWishlist.filter(item => item.id !== product.id)
+      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist))
+      setWishlistIds(updatedWishlist.map(item => item.id))
+      
+      // Show notification
+      showNotification('💔 Removed from wishlist', 'bg-slate-900')
+    } else {
+      // Add to wishlist
+      const updatedWishlist = [...existingWishlist, product]
+      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist))
+      setWishlistIds(updatedWishlist.map(item => item.id))
+      
+      // Show notification
+      showNotification('❤️ Added to wishlist!', 'bg-gradient-to-r from-red-500 to-pink-500')
+    }
+    
+    // Trigger storage event
+    window.dispatchEvent(new Event('storage'))
+  }
+  
+  const showNotification = (message, bgClass) => {
+    const notification = document.createElement('div')
+    notification.className = `fixed top-24 right-6 ${bgClass} text-white px-6 py-3 rounded-xl shadow-2xl z-50 animate-slide-in-right flex items-center gap-2`
+    notification.innerHTML = `<span class="font-semibold">${message}</span>`
+    document.body.appendChild(notification)
+    setTimeout(() => notification.remove(), 3000)
+  }
 
   const [products, setProducts] = useState([])
 
@@ -305,8 +350,18 @@ const ProductsPage = () => {
                       )}
 
                       {/* Wishlist Button */}
-                      <button className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white text-slate-400 hover:text-red-500 flex items-center justify-center shadow-md translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10">
-                        <span className="material-symbols-outlined text-[20px]">favorite</span>
+                      <button 
+                        onClick={(e) => handleToggleWishlist(e, product)}
+                        className={`absolute bottom-4 right-4 w-10 h-10 rounded-full flex items-center justify-center shadow-lg translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10 hover:scale-110 ${
+                          wishlistIds.includes(product.id)
+                            ? 'bg-gradient-to-br from-red-500 to-pink-500 text-white shadow-red-500/50'
+                            : 'bg-white text-slate-400 hover:text-red-500'
+                        }`}
+                        title={wishlistIds.includes(product.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          {wishlistIds.includes(product.id) ? 'favorite' : 'favorite_border'}
+                        </span>
                       </button>
                     </div>
 

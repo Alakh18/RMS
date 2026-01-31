@@ -13,6 +13,10 @@ const handleChange = (e) => {
   setFormData({ ...formData, [e.target.name]: e.target.value });
 };
 
+  // src/pages/Login.jsx
+
+// ... imports remain the same
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);

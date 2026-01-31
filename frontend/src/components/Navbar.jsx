@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import CartDrawer from './CartDrawer';
 
 function Navbar() {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [user, setUser] = useState(null);
-  const [cartCount, setCartCount] = useState(0); // New state for cart count
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const dropdownRef = useRef(null);
 
   // Load user data and cart count when component mounts
@@ -20,12 +23,16 @@ function Navbar() {
       // Update Cart Count
       const cart = JSON.parse(localStorage.getItem('cart')) || [];
       setCartCount(cart.length);
+      
+      // Update Wishlist Count
+      const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+      setWishlistCount(wishlist.length);
     };
 
     // Run on mount
     updateAuthAndCart();
 
-    // Listen for changes (Login/Logout or Add to Cart)
+    // Listen for changes (Login/Logout or Add to Cart/Wishlist)
     window.addEventListener('storage', updateAuthAndCart);
     
     // Cleanup
@@ -102,21 +109,31 @@ function Navbar() {
 
         {/* Right Icons */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* Wishlist */}
-          <button className="p-2 sm:p-2.5 text-slate-600 hover:text-red-500 transition-all duration-300 rounded-xl hover:bg-red-50 group relative">
-            <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">favorite</span>
-          </button>
-
-          {/* UPDATED: Cart Button is now a Link and uses state */}
+          {/* Wishlist Link (Updated) */}
           <Link 
-            to="/cart"
-            className="p-2 sm:p-2.5 text-slate-600 hover:text-primary transition-all duration-300 rounded-xl hover:bg-primary/10 relative group block"
+            to="/wishlist" 
+            className="p-2 sm:p-2.5 text-slate-600 hover:text-red-500 transition-all duration-300 rounded-xl hover:bg-red-50 group relative block"
+          >
+            <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">favorite</span>
+            {wishlistCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 size-5 bg-gradient-to-br from-red-500 to-pink-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
+          {/* Cart Link */}
+          <button
+            onClick={() => setIsCartDrawerOpen(true)}
+            className="p-2 sm:p-2.5 text-slate-600 hover:text-primary transition-all duration-300 rounded-xl hover:bg-primary/10 relative group"
           >
             <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">shopping_cart</span>
-            <span className="absolute -top-0.5 -right-0.5 size-5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
-              {cartCount}
-            </span>
-          </Link>
+            {cartCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 size-5 bg-gradient-to-br from-primary to-accent text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+                {cartCount}
+              </span>
+            )}
+          </button>
 
           {/* Profile Dropdown Section */}
           <div className="relative ml-1 sm:ml-2" ref={dropdownRef}>
@@ -196,6 +213,9 @@ function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Cart Drawer */}
+      <CartDrawer isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
     </nav>
   );
 }

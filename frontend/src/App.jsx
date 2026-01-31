@@ -14,6 +14,14 @@ import EditProfile from './pages/EditProfile'
 import CartPage from './pages/CartPage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword'; 
+import CheckoutPage from './pages/CheckoutPage';
+import PaymentPage from './pages/PaymentPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import TermsPage from './pages/TermsPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
+import WishlistPage from './pages/WishlistPage'
+import OrdersPage from './pages/OrdersPage'
 
 function App() {
   return (
@@ -36,6 +44,14 @@ function App() {
       <Route path="/product/:id" element={<ProductPage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/payment" element={<PaymentPage />} />
+      <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/wishlist" element={<WishlistPage />} />
+      <Route path="/orders" element={<OrdersPage />} />
     </Routes>
   )
 }

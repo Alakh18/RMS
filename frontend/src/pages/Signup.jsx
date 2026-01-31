@@ -13,6 +13,7 @@ const Signup = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false); // New state for Terms agreement
 
   const API_BASE_URL = 'http://localhost:3000/api/auth'; 
 
@@ -47,6 +48,7 @@ const Signup = () => {
     setLoading(true);
 
     // 1. Check if passwords match
+    // Validation: Check passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -57,6 +59,13 @@ const Signup = () => {
     const passwordError = validatePassword(formData.password);
     if (passwordError) {
       setError(passwordError);
+      setLoading(false);
+      return;
+    }
+
+    // Validation: Check if Terms are agreed
+    if (!agreed) {
+      setError("You must agree to the Terms and Conditions to register.");
       setLoading(false);
       return;
     }
@@ -124,6 +133,20 @@ const Signup = () => {
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-700 ml-1 uppercase tracking-wider">Confirm Password</label>
             <input name="confirmPassword" onChange={handleChange} type="password" className="w-full px-5 py-3 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all" required />
+          </div>
+
+          {/* Terms and Conditions Checkbox */}
+          <div className="flex items-center gap-3 ml-1">
+            <input 
+              type="checkbox" 
+              id="terms" 
+              checked={agreed} 
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer accent-primary"
+            />
+            <label htmlFor="terms" className="text-xs text-slate-600 cursor-pointer select-none font-medium">
+              I agree to the <Link to="/terms" target="_blank" className="text-primary font-bold hover:underline">Terms and Conditions</Link>
+            </label>
           </div>
 
           <button disabled={loading} type="submit" className="mt-2 w-full bg-primary hover:bg-primary-dark text-white text-sm font-bold px-6 py-4 rounded-full transition-all shadow-lg hover:shadow-primary/30 flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70">
