@@ -80,13 +80,13 @@ const Login = () => {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between ml-1">
-                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                  Password
-                </label>
-                 <a href="#" className="text-sm font-bold text-primary hover:text-primary-dark transition-colors">
-                  Forgot Password?
-                 </a>
-            </div>
+              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Password
+              </label>
+              <Link to="/forgot-password" size="sm" className="text-sm font-bold text-primary hover:text-primary-dark transition-colors">
+                Forgot Password?
+              </Link>
+              </div>
            <input
               name="password"
               onChange={handleChange}
