@@ -22,6 +22,9 @@ app.use('/api/auth', authRoutes);
 // Vendor routes (protected by vendorAuth middleware)
 app.use('/api/vendor', vendorRoutes);
 
+// Public products listing
+app.use('/api/products', require('./routes/productRoutes'));
+
 // Health Check
 app.get('/health', (req, res) => {
   res.json({ status: 'API is running', timestamp: new Date() });
