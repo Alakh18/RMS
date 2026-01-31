@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 /**
- * Get all vendor products with attributes
+ * Get all vendor products with attributes and images
  * Only returns products belonging to the authenticated vendor
  */
 const getVendorProducts = async (req, res) => {
@@ -16,6 +16,7 @@ const getVendorProducts = async (req, res) => {
       },
       include: {
         attributes: true,
+        images: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -40,16 +41,19 @@ const getVendorProducts = async (req, res) => {
 };
 
 /**
- * Create a new product with optional attributes
+ * Create a new product with optional attributes and images
  * vendorId is extracted from authenticated user, never from request body
  */
 const createProduct = async (req, res) => {
   try {
     const vendorId = req.user.userId;
-    const { name, description, brand, pricingType, price, securityDeposit, quantity, isRentable, isPublished, attributes } = req.body;
+    const { name, description, brand, pricingType, price, securityDeposit, quantity, isRentable, isPublished, attributes, images } = req.body;
+
+    console.log('Creating product for vendorId:', vendorId);
+    console.log('Request body:', req.body);
 
     // Validate required fields based on schema
-    if (!name || !price || quantity === undefined) {
+    if (!name || price === undefined || quantity === undefined) {
       return res.status(400).json({
         error: 'Missing required fields',
         required: ['name', 'price', 'quantity'],
@@ -64,7 +68,7 @@ const createProduct = async (req, res) => {
       });
     }
 
-    // Create product with attributes in transaction
+    // Create product with attributes and images
     const newProduct = await prisma.product.create({
       data: {
         name,
@@ -83,9 +87,17 @@ const createProduct = async (req, res) => {
             value: attr.value,
           })),
         },
+        images: {
+          create: (images || []).map((image, index) => ({
+            url: image.url || image,
+            altText: image.altText || `${name} - Image ${index + 1}`,
+            isPrimary: image.isPrimary || index === 0,
+          })),
+        },
       },
       include: {
         attributes: true,
+        images: true,
       },
     });
 
@@ -106,19 +118,19 @@ const createProduct = async (req, res) => {
     if (error.code === 'P2002') {
       return res.status(400).json({ error: 'Duplicate product name' });
     }
-    res.status(500).json({ error: 'Failed to create product' });
+    res.status(500).json({ error: 'Failed to create product', details: error.message });
   }
 };
 
 /**
- * Update product details and attributes
+ * Update product details, attributes, and images
  * Vendor can only update their own products
  */
 const updateProduct = async (req, res) => {
   try {
     const vendorId = req.user.userId;
     const { productId } = req.params;
-    const { name, description, brand, pricingType, price, securityDeposit, quantity, isRentable, isPublished, attributes } = req.body;
+    const { name, description, brand, pricingType, price, securityDeposit, quantity, isRentable, isPublished, attributes, images } = req.body;
 
     const productIdNum = parseInt(productId);
 
@@ -154,7 +166,7 @@ const updateProduct = async (req, res) => {
     if (isRentable !== undefined) updateData.isRentable = isRentable;
     if (isPublished !== undefined) updateData.isPublished = isPublished;
 
-    // Update product and handle attributes
+    // Update product and handle attributes/images
     const updatedProduct = await prisma.product.update({
       where: {
         id: productIdNum,
@@ -171,9 +183,21 @@ const updateProduct = async (req, res) => {
             })),
           },
         }),
+        // Replace images if provided
+        ...(images && {
+          images: {
+            deleteMany: {},
+            create: images.map((image, index) => ({
+              url: image.url || image,
+              altText: image.altText || `${name} - Image ${index + 1}`,
+              isPrimary: image.isPrimary || index === 0,
+            })),
+          },
+        }),
       },
       include: {
         attributes: true,
+        images: true,
       },
     });
 
@@ -276,6 +300,7 @@ const publishProduct = async (req, res) => {
       },
       include: {
         attributes: true,
+        images: true,
       },
     });
 
