@@ -14,36 +14,46 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  // src/pages/Login.jsx
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/login`, formData);
+// ... imports remain the same
 
-      if (response.data && response.data.token) {
-        // Save token and user info
-        localStorage.setItem('token', response.data.token);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
 
-        const profileOverrides = JSON.parse(localStorage.getItem('profileOverrides')) || {};
-        const userEmail = response.data.user?.email;
-        const emailKey = userEmail ? userEmail.trim().toLowerCase() : null;
-        const mergedUser = emailKey && profileOverrides[emailKey]
-          ? { ...response.data.user, ...profileOverrides[emailKey] }
-          : response.data.user;
+    const data = await response.json();
 
-        localStorage.setItem('user', JSON.stringify(mergedUser));
+    if (response.ok) {
+      // 1. Save Token
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      alert(`Welcome back, ${data.user.firstName}!`);
 
-        // Redirect to Home
+      // 2. ✅ CHECK ROLE & REDIRECT CORRECTLY
+      if (data.user.role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else if (data.user.role === 'VENDOR') {
+        navigate('/vendor/dashboard');
+      } else if (data.user.role === 'CUSTOMER') {
+        navigate('/');
+      } else {
         navigate('/');
       }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
+
+    } else {
+      alert(data.error);
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 hero-gradient font-display antialiased text-[#0d131c]">
