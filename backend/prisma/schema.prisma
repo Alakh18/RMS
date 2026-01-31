@@ -31,4 +31,4 @@ model User {
   productCategory String?  // From your mockup dropdown
   
   createdAt       DateTime @default(now())
-}
+} 
