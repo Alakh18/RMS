@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import VendorSignup from './pages/VendorSignup'
+import AdminDashboard from './pages/AdminDashboard';
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -85,6 +86,7 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/product/:id" element={<ProductPage />} />
+      <Route path="/admin" element={<AdminDashboard />} />
     </Routes>
   )
 }
