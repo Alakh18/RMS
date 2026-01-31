@@ -1,39 +1,130 @@
+import { useState } from 'react'
 import './App.css'
 
+const PRODUCTS = [
+  {
+    id: 1,
+    name: "Sony FX6 Cinema Line",
+    description: "Professional Full-frame Camera",
+    price: "$145 / day",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAou0OBZmXCww7mTZqJITjTHgAvlNcH1LJH8vL_iHA1vI5HABxEPvLxcK0YnNmGuUq-R3mPh9TLtPh0oiCD0IrrgCBEEbOMktn8fhOBNwtYdeymeH9I9sttUz34wNVDT7CHTwDOYT4uMIKdiWEIl7b1XLZCi83L5MuI7p_AouDLkGUJlHlnmct1bKHmlEKq7ZEBWf25tdxyAYLO7qpy4nPOiWM8tX6OPukQlJ273NFTap0fWtFv2zkKxuEY88rlLfOFJUkvG1DBwner",
+    rating: 4.9,
+    status: "Available",
+    isVideo: false
+  },
+  {
+    id: 2,
+    name: "MacBook Pro 16\" M3 Max",
+    description: "128GB RAM, 8TB SSD",
+    price: "$85 / day",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAY2k5Dt7nEQe37VI-YKJFBhJIsADaIEUlV8mkbVYeHYPBV0qMZc5LakhrYGfrPb4Q7e0HJ5cHGSzneSDCpuZP0uCiBj1C6qDZrhbW4Z7efubTtINSZH0cGZFDvjzRFTCLmIXiNKTPoPJRxHLvPtrPVX_NoQbuZ4kSLez9shnAJPlX2F5uUZYa66U96jMLzm1Ang6cz5Cf9AUbns1M6XgJWB7aTBHAIU13sDouYSqEYd7sbtM4bgLspEOmIO9JeOUOAyhpLkfXeJgIt",
+    rating: 5.0,
+    status: "Available",
+    isVideo: false
+  },
+  {
+    id: 3,
+    name: "Herman Miller Aeron",
+    description: "Remastered, Size B, Graphite",
+    price: "$25 / day",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDFtyLT5AT8oSWbiq3YWRSO4ph3y2khE_5aSLcj7nvHIkqVhorzGY-rRFwrdxrHuZzRhUo1ZaJcEvh3ikk0J74otxl29G4nCkrpuDk9803_kib23yn4IlTM0zt76YrBzXNRqniVIFPA_ZKJjKTmpgb3oULZbmzSTwNkDhsxW4jCITMiBlWGwFWhjTFz485j6V66xU0-En7OeQRnNeoBrahXyS40kPbHaYs4nXn4HWgnd6q-92mfj8Z5pHZaA7sED0E_3C0tJRWdvcNB",
+    rating: 4.8,
+    status: "Low Stock",
+    isVideo: false
+  },
+  {
+    id: 4,
+    name: "RED V-RAPTOR 8K",
+    description: "vv + 6K S35",
+    price: "$450 / day",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAou0OBZmXCww7mTZqJITjTHgAvlNcH1LJH8vL_iHA1vI5HABxEPvLxcK0YnNmGuUq-R3mPh9TLtPh0oiCD0IrrgCBEEbOMktn8fhOBNwtYdeymeH9I9sttUz34wNVDT7CHTwDOYT4uMIKdiWEIl7b1XLZCi83L5MuI7p_AouDLkGUJlHlnmct1bKHmlEKq7ZEBWf25tdxyAYLO7qpy4nPOiWM8tX6OPukQlJ273NFTap0fWtFv2zkKxuEY88rlLfOFJUkvG1DBwner", 
+    rating: 5.0,
+    status: "Out of Stock",
+    isVideo: true
+  },
+  {
+    id: 5,
+    name: "DJI Mavic 3 Pro",
+    description: "Triple Lens Flagship Drone",
+    price: "$65 / day",
+    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCSIub7x4JXVEReUpk0nG93JGvbhJfvD1tVAEZmL4pK8adSGzJ3E8vXAGyClpu0VztGGEpDv8_QB17jcr3iO6lZh8GyP2qecRFShgQkxHS0Bb9s4-p__kcbpPbtYSukWqUW7ZXU4S_v03g-ishBiHUahFE1UjBPK_aN59fcxFSLob1b9oD-HKcazQeAssPfLwpUJLYkJfCkvpD_gFL5kSzlqOvKSnBAX4t_Nk6fx87jXNNal4vmpYjRgG1ThlwRSxrP1I-895QlHZzV",
+    rating: 4.7,
+    status: "Available",
+    isVideo: true
+  },
+  {
+      id: 6,
+      name: "Profoto B10X",
+      description: "Lights & Modification",
+      price: "$40 / hour",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDyUev10S7kj_86wDsCCz1L65okouH0_W5ycNwEUZhfnRL7S5xfhBXz77Jm_6s0DlhwNNllAXsylYldDw3vFAJC17Th54Gj0yWs-ne-NpMfdSjxSnG06yRGOVISvX2kO3WP0finoMc-hcG9WRGcldqResmpePpozbKRv4xnzzkpfVIvMpBsfjolOdjJAtdwbyS_b9RSuqv09QKzmV2rmJXhiciLekLsjSlmcyiNYn7qLScDAhWickSpKav9rmkXQx92HkGI5Y0bxt30",
+      rating: 4.9,
+      status: "Available",
+      isVideo: false
+  }
+];
+
 function App() {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   return (
     <div className="bg-background-light text-[#0d131c] font-display antialiased overflow-x-hidden selection:bg-primary/20 selection:text-primary">
       {/* Sticky Glass Header */}
       <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 transition-all duration-300">
         <div className="max-w-7xl mx-auto glass-panel rounded-full px-6 py-3 flex items-center justify-between shadow-glass">
-          <div className="flex items-center gap-3">
+          {/* Logo */}
+          <div className="flex items-center gap-3 shrink-0">
             <div className="size-8 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center text-white shadow-glow">
               <span className="material-symbols-outlined text-[20px]">hexagon</span>
             </div>
             <span className="text-lg font-bold tracking-tight text-[#0d131c]">RentalEco</span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a className="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">
-              Marketplace
-            </a>
-            <a className="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">
-              How it Works
-            </a>
-            <a className="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">
-              Pricing
-            </a>
-            <a className="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="#">
-              Enterprise
-            </a>
+
+          {/* Center Search Bar */}
+          <div className="hidden md:flex flex-1 max-w-xl mx-8 relative">
+            <input 
+              type="text" 
+              placeholder="Search for gear..." 
+              className="w-full bg-slate-100/50 border border-slate-200 rounded-full py-2.5 pl-5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all"
+            />
+            <button className="absolute right-1 top-1 w-9 h-9 bg-white rounded-full shadow-sm flex items-center justify-center text-slate-500 hover:text-primary hover:shadow transition-all">
+              <span className="material-symbols-outlined text-[20px]">search</span>
+            </button>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="hidden sm:flex text-sm font-medium text-[#0d131c] px-4 py-2 hover:bg-slate-100 rounded-full transition-colors">
-              Log In
+
+          {/* Right Icons */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Wishlist */}
+            <button className="p-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-slate-50">
+              <span className="material-symbols-outlined">favorite</span>
             </button>
-            <button className="bg-primary hover:bg-primary-dark text-white text-sm font-bold px-6 py-2.5 rounded-full transition-all shadow-lg hover:shadow-primary/30 flex items-center gap-2">
-              Start Renting
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+
+            {/* Cart with Badge */}
+            <button className="p-2 text-slate-600 hover:text-primary transition-colors rounded-full hover:bg-slate-50 relative">
+              <span className="material-symbols-outlined">shopping_cart</span>
+              <span className="absolute top-0 right-0 size-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white">0</span>
             </button>
+
+            {/* Profile Avatar */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="size-9 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm hover:border-primary transition-all focus:outline-none"
+              >
+                <img src="https://ui-avatars.com/api/?name=Alex+Doe&background=257bf4&color=fff" alt="Profile" className="w-full h-full object-cover" />
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isProfileOpen && (
+                <div className="absolute right-0 top-full mt-3 w-48 bg-white glass-panel rounded-xl shadow-xl overflow-hidden py-1 border border-white/50 animate-in fade-in slide-in-from-top-2 z-50">
+                  <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">My Account</a>
+                  <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">My Orders</a>
+                  <a href="#" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary transition-colors">Settings</a>
+                  <div className="h-px bg-slate-100 my-1"></div>
+                  <a href="#" className="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">Logout</a>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -107,9 +198,16 @@ function App() {
       {/* Trust Section */}
       <section className="border-y border-slate-100 bg-white py-8 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex items-center gap-2 whitespace-nowrap">
-            <span className="material-symbols-outlined text-green-500 filled">verified_user</span>
-            <span className="text-sm font-bold text-slate-900">GST Verified Partners</span>
+          <div className="flex items-center gap-4 whitespace-nowrap">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-green-500 filled">verified_user</span>
+              <span className="text-sm font-bold text-slate-900">GST Invoice Available</span>
+            </div>
+            <div className="h-4 w-px bg-slate-300"></div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-blue-500 filled">security</span>
+              <span className="text-sm font-bold text-slate-900">Secure Deposits</span>
+            </div>
           </div>
           <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
           <div className="flex flex-1 overflow-hidden relative mask-image-gradient">
@@ -148,36 +246,36 @@ function App() {
               <div className="w-14 h-14 rounded-full bg-blue-100 text-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="material-symbols-outlined text-[28px]">search</span>
               </div>
-              <h3 className="text-lg font-bold text-[#0d131c] mb-2">1. Browse Inventory</h3>
+              <h3 className="text-lg font-bold text-[#0d131c] mb-2">1. Browse & Quote</h3>
               <p className="text-slate-500 text-sm leading-relaxed">
-                Explore a curated list of premium assets available near you with real-time availability.
+                Add products to your cart and generate an instant rental quotation with flexible terms.
               </p>
             </div>
             <div className="group p-8 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300">
               <div className="w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">bolt</span>
+                <span className="material-symbols-outlined text-[28px]">receipt_long</span>
               </div>
-              <h3 className="text-lg font-bold text-[#0d131c] mb-2">2. Instant Quote</h3>
+              <h3 className="text-lg font-bold text-[#0d131c] mb-2">2. Verify & Order</h3>
               <p className="text-slate-500 text-sm leading-relaxed">
-                Get AI-generated pricing based on duration, demand, and dynamic insurance costs.
+                Confirm your quotation, complete ID verification, and secure your booking with a deposit.
               </p>
             </div>
             <div className="group p-8 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300">
               <div className="w-14 h-14 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">verified_user</span>
+                <span className="material-symbols-outlined text-[28px]">package_2</span>
               </div>
-              <h3 className="text-lg font-bold text-[#0d131c] mb-2">3. Secure Rental</h3>
+              <h3 className="text-lg font-bold text-[#0d131c] mb-2">3. Pickup & Use</h3>
               <p className="text-slate-500 text-sm leading-relaxed">
-                Book instantly with verified ID, secure payments, and smart contract escrow.
+                Receive pickup instructions or schedule delivery. Your rental period starts upon handover.
               </p>
             </div>
             <div className="group p-8 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-300">
               <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[28px]">assignment_return</span>
+                <span className="material-symbols-outlined text-[28px]">assignment_returned</span>
               </div>
-              <h3 className="text-lg font-bold text-[#0d131c] mb-2">4. Easy Return</h3>
+              <h3 className="text-lg font-bold text-[#0d131c] mb-2">4. Return & Invoice</h3>
               <p className="text-slate-500 text-sm leading-relaxed">
-                Schedule a pickup or drop off at verified smart-locker locations near you.
+                Return items to generate final invoice. Security deposits are refunded after inspection.
               </p>
             </div>
           </div>
@@ -249,147 +347,207 @@ function App() {
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="py-24 bg-white">
+      {/* Marketplace Section - New 2 Column Layout */}
+      <section className="py-24 bg-white" id="marketplace">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold text-[#0d131c]">Featured Premium Gear</h2>
-            <div className="flex items-center bg-slate-100 rounded-full p-1 border border-slate-200">
-              <button className="px-4 py-1.5 rounded-full bg-white shadow-sm text-sm font-bold text-slate-800 transition-all">
-                Daily
-              </button>
-              <button className="px-4 py-1.5 rounded-full text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">
-                Weekly
-              </button>
-              <button className="px-4 py-1.5 rounded-full text-sm font-medium text-slate-500 hover:text-slate-800 transition-all">
-                Monthly
-              </button>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-[#0d131c]">Marketplace</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Left Sidebar - Filters */}
+            <div className="lg:col-span-1 space-y-8">
+              {/* Brand Filter */}
+              <div className="glass-panel p-6 rounded-xl">
+                <h3 className="font-bold text-slate-800 mb-4">Brand</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" defaultChecked />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">Sony</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" defaultChecked />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">Canon</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" defaultChecked />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">Apple</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">DJI</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">Blackmagic</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Color Filter */}
+              <div className="glass-panel p-6 rounded-xl">
+                <h3 className="font-bold text-slate-800 mb-4">Color</h3>
+                <div className="flex gap-3">
+                  <button className="w-8 h-8 rounded-full bg-teal-500 hover:ring-2 hover:ring-offset-2 hover:ring-teal-500 transition-all"></button>
+                  <button className="w-8 h-8 rounded-full bg-purple-600 hover:ring-2 hover:ring-offset-2 hover:ring-purple-600 transition-all"></button>
+                  <button className="w-8 h-8 rounded-full bg-amber-700 hover:ring-2 hover:ring-offset-2 hover:ring-amber-700 transition-all"></button>
+                  <button className="w-8 h-8 rounded-full bg-orange-500 hover:ring-2 hover:ring-offset-2 hover:ring-orange-500 transition-all"></button>
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div className="glass-panel p-6 rounded-xl">
+                <h3 className="font-bold text-slate-800 mb-4">Price Range</h3>
+                <div className="space-y-4">
+                  <div className="h-1 bg-slate-200 rounded-full relative">
+                    <div className="absolute left-0 w-1/2 h-full bg-primary rounded-full"></div>
+                    <div className="absolute left-1/2 w-4 h-4 bg-white border-2 border-primary rounded-full shadow top-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform"></div>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-slate-600">
+                    <span>$10</span>
+                    <span>$10,000</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Duration Filter */}
+              <div className="glass-panel p-6 rounded-xl">
+                <h3 className="font-bold text-slate-800 mb-4">Duration</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="radio" name="duration" className="w-4 h-4 border-slate-300 text-primary focus:ring-primary" />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">1 Month</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="radio" name="duration" className="w-4 h-4 border-slate-300 text-primary focus:ring-primary" defaultChecked />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">6 Months</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="radio" name="duration" className="w-4 h-4 border-slate-300 text-primary focus:ring-primary" />
+                    <span className="text-sm text-slate-600 group-hover:text-primary transition-colors">1 Year</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Grid - Products */}
+            <div className="lg:col-span-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                {PRODUCTS.map(product => (
+                  <div key={product.id} className="group rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 hover:border-primary/30 transition-all duration-300 hover:-translate-y-2 relative">
+                    {/* Out of stock overlay */}
+                    {product.status === 'Out of Stock' && (
+                      <div className="absolute inset-0 z-20 bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center">
+                        <span className="px-4 py-2 bg-white/10 border border-white/20 rounded-full text-white font-bold backdrop-blur-md">Out of Stock</span>
+                      </div>
+                    )}
+                    
+                    <div className="relative h-56 bg-slate-50 overflow-hidden">
+                      <img
+                        alt={product.name}
+                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${product.status === 'Out of Stock' ? 'grayscale' : ''}`}
+                        src={product.image}
+                      />
+                      
+                      {/* Video Play Overlay */}
+                      {product.isVideo && product.status !== 'Out of Stock' && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
+                          <div className="w-12 h-12 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg text-primary hover:scale-110 transition-transform cursor-pointer">
+                            <span className="material-symbols-outlined text-[28px] ml-1">play_arrow</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Status Badge */}
+                      {product.status !== 'Out of Stock' && (
+                        <div className="absolute top-4 left-4">
+                          <span className={`px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-bold border shadow-sm flex items-center gap-1 ${
+                            product.status === 'Available' ? 'text-emerald-600 border-emerald-100' : 'text-amber-600 border-amber-100'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              product.status === 'Available' ? 'bg-emerald-500' : 'bg-amber-500'
+                            }`}></span> 
+                            {product.status}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Wishlist Button */}
+                      <button className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white text-slate-400 hover:text-red-500 flex items-center justify-center shadow-md translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10">
+                        <span className="material-symbols-outlined text-[20px]">favorite</span>
+                      </button>
+                    </div>
+
+                    <div className="p-5">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900 group-hover:text-primary transition-colors line-clamp-1">
+                            {product.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 line-clamp-1">{product.description}</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-amber-400 text-xs font-bold shrink-0">
+                          <span className="material-symbols-outlined text-[14px] filled">star</span> {product.rating}
+                        </div>
+                      </div>
+                      
+                      <div className="my-3 h-px w-full bg-slate-100"></div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          {/* Dynamic Pricing Logic embedded in data string for simplicity */}
+                          <span className="text-lg font-bold text-slate-900">{product.price.split(' ')[0]}</span>
+                          <span className="text-xs text-slate-500"> {product.price.split(' ').slice(1).join(' ')}</span>
+                        </div>
+                        <button disabled={product.status === 'Out of Stock'} className="px-4 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold hover:bg-primary hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary/10 disabled:hover:text-primary">
+                          Rent Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <div className="flex justify-center items-center gap-2">
+                <button className="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-50 transition-colors disabled:opacity-50">
+                  <span className="material-symbols-outlined text-sm">arrow_back</span>
+                </button>
+                <button className="w-10 h-10 rounded-full bg-primary text-white font-bold text-sm shadow-lg shadow-primary/30">1</button>
+                <button className="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-primary/50 transition-colors">2</button>
+                <button className="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-primary/50 transition-colors">3</button>
+                <span className="text-slate-400">...</span>
+                <button className="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-slate-50 transition-colors">
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="group rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 hover:border-primary/30 transition-all duration-300 hover:-translate-y-2">
-              <div className="relative h-64 bg-slate-50 overflow-hidden">
-                <img
-                  alt="Sony Alpha Camera"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  data-alt="Sony Mirrorless Camera"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAou0OBZmXCww7mTZqJITjTHgAvlNcH1LJH8vL_iHA1vI5HABxEPvLxcK0YnNmGuUq-R3mPh9TLtPh0oiCD0IrrgCBEEbOMktn8fhOBNwtYdeymeH9I9sttUz34wNVDT7CHTwDOYT4uMIKdiWEIl7b1XLZCi83L5MuI7p_AouDLkGUJlHlnmct1bKHmlEKq7ZEBWf25tdxyAYLO7qpy4nPOiWM8tX6OPukQlJ273NFTap0fWtFv2zkKxuEY88rlLfOFJUkvG1DBwner"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-bold text-emerald-600 border border-emerald-100 shadow-sm flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available
-                  </span>
-                </div>
-                <button className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white text-slate-400 hover:text-red-500 flex items-center justify-center shadow-md translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                  <span className="material-symbols-outlined text-[20px]">favorite</span>
-                </button>
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">
-                      Sony FX6 Cinema Line
-                    </h3>
-                    <p className="text-sm text-slate-500">Professional Full-frame Camera</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-amber-400 text-sm font-bold">
-                    <span className="material-symbols-outlined text-[16px] filled">star</span> 4.9
-                  </div>
-                </div>
-                <div className="my-4 h-px w-full bg-slate-100"></div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-2xl font-bold text-slate-900">$145</span>
-                    <span className="text-sm text-slate-500">/day</span>
-                  </div>
-                  <button className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold hover:bg-primary hover:text-white transition-colors">
-                    Rent Now
-                  </button>
-                </div>
-              </div>
+        </div>
+      </section>
+
+      {/* Vendor Call to Action */}
+      <section className="bg-slate-900 mx-4 rounded-xl py-12 px-6 mb-4 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-bold text-white mb-4">Own Equipment? Start Earning.</h2>
+            <p className="text-slate-400 text-lg mb-6">
+              Join thousands of vendors monetizing their idle assets. We handle the bookings, payments, and insurance so you can focus on growing your inventory.
+            </p>
+            <div className="flex flex-wrap gap-4 text-sm text-slate-300 font-medium">
+              <span className="flex items-center gap-2"><span className="material-symbols-outlined text-green-500 text-lg">check_circle</span> Guaranteed Payouts</span>
+              <span className="flex items-center gap-2"><span className="material-symbols-outlined text-green-500 text-lg">check_circle</span> Verified Renters</span>
+              <span className="flex items-center gap-2"><span className="material-symbols-outlined text-green-500 text-lg">check_circle</span> Advanced Analytics</span>
             </div>
-            <div className="group rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 hover:border-primary/30 transition-all duration-300 hover:-translate-y-2">
-              <div className="relative h-64 bg-slate-50 overflow-hidden">
-                <img
-                  alt="Apple MacBook Pro"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  data-alt="MacBook Pro Laptop"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAY2k5Dt7nEQe37VI-YKJFBhJIsADaIEUlV8mkbVYeHYPBV0qMZc5LakhrYGfrPb4Q7e0HJ5cHGSzneSDCpuZP0uCiBj1C6qDZrhbW4Z7efubTtINSZH0cGZFDvjzRFTCLmIXiNKTPoPJRxHLvPtrPVX_NoQbuZ4kSLez9shnAJPlX2F5uUZYa66U96jMLzm1Ang6cz5Cf9AUbns1M6XgJWB7aTBHAIU13sDouYSqEYd7sbtM4bgLspEOmIO9JeOUOAyhpLkfXeJgIt"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-bold text-emerald-600 border border-emerald-100 shadow-sm flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available
-                  </span>
-                </div>
-                <button className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white text-slate-400 hover:text-red-500 flex items-center justify-center shadow-md translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                  <span className="material-symbols-outlined text-[20px]">favorite</span>
-                </button>
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">
-                      MacBook Pro 16&quot; M3 Max
-                    </h3>
-                    <p className="text-sm text-slate-500">128GB RAM, 8TB SSD</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-amber-400 text-sm font-bold">
-                    <span className="material-symbols-outlined text-[16px] filled">star</span> 5.0
-                  </div>
-                </div>
-                <div className="my-4 h-px w-full bg-slate-100"></div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-2xl font-bold text-slate-900">$85</span>
-                    <span className="text-sm text-slate-500">/day</span>
-                  </div>
-                  <button className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold hover:bg-primary hover:text-white transition-colors">
-                    Rent Now
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="group rounded-xl border border-slate-200 bg-white overflow-hidden hover:shadow-2xl hover:shadow-slate-200/50 hover:border-primary/30 transition-all duration-300 hover:-translate-y-2">
-              <div className="relative h-64 bg-slate-50 overflow-hidden">
-                <img
-                  alt="Herman Miller Chair"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  data-alt="Ergonomic Office Chair"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFtyLT5AT8oSWbiq3YWRSO4ph3y2khE_5aSLcj7nvHIkqVhorzGY-rRFwrdxrHuZzRhUo1ZaJcEvh3ikk0J74otxl29G4nCkrpuDk9803_kib23yn4IlTM0zt76YrBzXNRqniVIFPA_ZKJjKTmpgb3oULZbmzSTwNkDhsxW4jCITMiBlWGwFWhjTFz485j6V66xU0-En7OeQRnNeoBrahXyS40kPbHaYs4nXn4HWgnd6q-92mfj8Z5pHZaA7sED0E_3C0tJRWdvcNB"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1 rounded-full bg-slate-800/90 backdrop-blur text-xs font-bold text-white border border-slate-700 shadow-sm flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Low Stock
-                  </span>
-                </div>
-                <button className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-white text-slate-400 hover:text-red-500 flex items-center justify-center shadow-md translate-y-12 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                  <span className="material-symbols-outlined text-[20px]">favorite</span>
-                </button>
-              </div>
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors">
-                      Herman Miller Aeron
-                    </h3>
-                    <p className="text-sm text-slate-500">Remastered, Size B, Graphite</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-amber-400 text-sm font-bold">
-                    <span className="material-symbols-outlined text-[16px] filled">star</span> 4.8
-                  </div>
-                </div>
-                <div className="my-4 h-px w-full bg-slate-100"></div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-2xl font-bold text-slate-900">$25</span>
-                    <span className="text-sm text-slate-500">/day</span>
-                  </div>
-                  <button className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold hover:bg-primary hover:text-white transition-colors">
-                    Rent Now
-                  </button>
-                </div>
-              </div>
-            </div>
+          </div>
+          <div className="flex gap-4">
+             <button className="bg-white text-slate-900 hover:bg-slate-100 font-bold px-8 py-3 rounded-full transition-all shadow-lg flex items-center gap-2">
+              Become a Vendor
+            </button>
+             <button className="bg-slate-800 text-white hover:bg-slate-700 font-bold px-8 py-3 rounded-full transition-all border border-slate-700">
+              Admin Login
+            </button>
           </div>
         </div>
       </section>
@@ -429,17 +587,17 @@ function App() {
               </li>
               <li>
                 <a className="hover:text-white transition-colors" href="#">
-                  Pricing
+                  Get a Quote
                 </a>
               </li>
               <li>
                 <a className="hover:text-white transition-colors" href="#">
-                  Enterprise
+                  Vendor Portal
                 </a>
               </li>
               <li>
                 <a className="hover:text-white transition-colors" href="#">
-                  Partners
+                  Admin Dashboard
                 </a>
               </li>
             </ul>
