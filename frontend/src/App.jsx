@@ -23,7 +23,7 @@ function App() {
       <Route path="/vendor/*" element={<VendorRoutes />} />
       
       {/* Customer Routes */}
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

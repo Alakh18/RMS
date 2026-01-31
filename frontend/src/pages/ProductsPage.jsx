@@ -12,15 +12,12 @@ const ProductsPage = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('day')
 
   const [products, setProducts] = useState([])
-  const [loadingProducts, setLoadingProducts] = useState(true)
-  const [productsError, setProductsError] = useState(null)
 
   // Load published products for public listing
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
-        setLoadingProducts(true)
         const response = await fetchProducts()
         if (response && response.success && mounted) {
           // Map DB product shape to UI product shape expected by this page
@@ -57,9 +54,8 @@ const ProductsPage = () => {
         }
       } catch (err) {
         console.error('Failed to load public products:', err)
-        setProductsError('Failed to load products')
       } finally {
-        if (mounted) setLoadingProducts(false)
+        // cleanup
       }
     }
     load()
