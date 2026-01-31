@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import VendorSignup from './pages/VendorSignup'
 import AdminDashboard from './pages/AdminDashboard';
+import VendorRoutes from './vendor/VendorRoutes'
 import './App.css'
 import ProductPage from './pages/ProductPage'
 import Profile from './pages/Profile'
@@ -18,6 +19,11 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      {/* Vendor Routes */}
+      <Route path="/vendor/*" element={<VendorRoutes />} />
+      
+      {/* Customer Routes */}
+      <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

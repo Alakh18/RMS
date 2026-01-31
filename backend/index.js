@@ -2,7 +2,12 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
+<<<<<<< HEAD
 const orderRoutes = require('./routes/orderRoutes');
+=======
+const vendorRoutes = require('./routes/vendor');
+
+>>>>>>> 9c6baa7726bfe505ba86a673199275745d3c017e
 dotenv.config();
 
 const app = express();
@@ -15,9 +20,11 @@ app.use(express.json()); // Parse JSON bodies
 app.use(cors());         // Enable CORS for your friend's frontend
 
 // Route Middlewares
-// This prefixes all auth routes with /api/auth
-// Example: The signup route becomes http://localhost:3000/api/auth/signup
+// Customer authentication routes
 app.use('/api/auth', authRoutes);
+
+// Vendor routes (protected by vendorAuth middleware)
+app.use('/api/vendor', vendorRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
