@@ -10,6 +10,9 @@ import Profile from './pages/Profile'
 import ProductsPage from './pages/ProductsPage'
 import EditProfile from './pages/EditProfile'
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import PaymentPage from './pages/PaymentPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
 
 function App() {
   return (
@@ -24,6 +27,9 @@ function App() {
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/product/:id" element={<ProductPage />} />
       <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/payment" element={<PaymentPage />} />
+      <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
     </Routes>
   )
 }
