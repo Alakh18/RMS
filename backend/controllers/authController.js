@@ -1,8 +1,7 @@
 // backend/controllers/authController.js
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken'); // Ensure you have installed this: npm install jsonwebtoken
-
+const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key'; // Move to .env in production
 
@@ -65,13 +64,11 @@ const signup = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
-// --- LOGIN LOGIC (NEW) ---
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Find User
+    // 1. Check if user exists
     const user = await prisma.user.findUnique({
       where: { email },
     });
@@ -80,30 +77,31 @@ const login = async (req, res) => {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
-    // 2. Check Password
+    // 2. Verify Password
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
-    // 3. Generate Token
+    // 3. Generate Token (JWT)
+    // This token contains the user's ID and Role
     const token = jwt.sign(
-      { id: user.id, role: user.role, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '1d' }
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' } // Token expires in 1 day
     );
 
-    // 4. Respond with Token and User Data
+    // 4. Respond with Token and User Info
     res.status(200).json({
       message: 'Login successful',
       token,
       user: {
         id: user.id,
         firstName: user.firstName,
-        lastName: user.lastName,
         email: user.email,
-        role: user.role,
-      },
+        role: user.role
+      }
     });
 
   } catch (error) {
@@ -111,5 +109,4 @@ const login = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 module.exports = { signup, login };
