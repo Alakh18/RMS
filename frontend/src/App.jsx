@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import VendorSignup from './pages/VendorSignup'
+import VendorApp from './vendor/VendorApp'
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -77,6 +78,7 @@ const PRODUCTS = [
 function App() {
   return (
     <Routes>
+      {/* Customer Routes */}
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
@@ -85,6 +87,9 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/product/:id" element={<ProductPage />} />
+      
+      {/* Vendor Routes - Protected under /vendor/* */}
+      <Route path="/vendor/*" element={<VendorApp />} />
     </Routes>
   )
 }

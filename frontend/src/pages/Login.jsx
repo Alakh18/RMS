@@ -27,8 +27,13 @@ const Login = () => {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
-        // Redirect to Home
-        navigate('/');
+        // Role-based redirection
+        const user = response.data.user;
+        if (user.role === 'VENDOR') {
+          navigate('/vendor');
+        } else {
+          navigate('/');
+        }
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
