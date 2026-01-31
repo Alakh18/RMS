@@ -2,11 +2,12 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
-const vendorRoutes = require('./routes/vendor');
+const orderRoutes = require('./routes/orderRoutes');const vendorRoutes = require('./routes/vendor');
 
 dotenv.config();
 
 const app = express();
+app.use('/api/orders', orderRoutes);
 app.use('/api/admin', require('./routes/adminRoutes'));
 const PORT = process.env.PORT || 3000;
 
