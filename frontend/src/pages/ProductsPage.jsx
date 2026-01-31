@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { PRODUCTS_ARRAY } from '../data/products'
+import { fetchProducts } from '../services/productApi'
 
 const ProductsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -11,32 +11,85 @@ const ProductsPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPeriod, setSelectedPeriod] = useState('day')
 
-  // Use products from shared data
-  const products = PRODUCTS_ARRAY
+  const [products, setProducts] = useState([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
+  const [productsError, setProductsError] = useState(null)
+
+  // Load published products for public listing
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        setLoadingProducts(true)
+        const response = await fetchProducts()
+        if (response && response.success && mounted) {
+          // Map DB product shape to UI product shape expected by this page
+          const mapped = response.data.map(p => {
+            const priceNum = parseFloat(p.price) || 0
+            const firstImage = (p.images && p.images.length > 0) ? p.images[0].url : '/placeholder.jpg'
+            const tags = (p.attributes || []).slice(0, 3).map(a => a.value || a.name)
+            const categoryAttr = (p.attributes || []).find(a => a.name && a.name.toLowerCase() === 'category')
+            return {
+              id: p.id,
+              name: p.name,
+              image: firstImage,
+              // include raw vendor fields for UI using vendor shape
+              price: p.price,
+              images: p.images || [],
+              attributes: p.attributes || [],
+              securityDeposit: p.securityDeposit,
+              quantity: p.quantity,
+              hourlyRate: +(priceNum / 24).toFixed(2),
+              dailyRate: +priceNum,
+              weeklyRate: +(priceNum * 7).toFixed(2),
+              monthlyRate: +(priceNum * 30).toFixed(2),
+              category: categoryAttr ? categoryAttr.value : 'all',
+              tags: tags.length ? tags : ['General'],
+              inStock: (p.quantity || 0) > 0,
+              rating: 4.5,
+              reviews: 0,
+              deposit: parseFloat(p.securityDeposit) || 0,
+              // preserve raw product for detail pages if needed
+              raw: p,
+            }
+          })
+          setProducts(mapped)
+        }
+      } catch (err) {
+        console.error('Failed to load public products:', err)
+        setProductsError('Failed to load products')
+      } finally {
+        if (mounted) setLoadingProducts(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
 
   const categories = [
     { id: 'all', name: 'All Products', count: products.length },
-    { id: 'electronics', name: 'Electronics', count: 2 },
-    { id: 'photography', name: 'Photography', count: 1 },
-    { id: 'transportation', name: 'Transportation', count: 1 },
-    { id: 'tools', name: 'Tools', count: 1 },
-    { id: 'audio', name: 'Audio', count: 1 },
-    { id: 'outdoor', name: 'Outdoor', count: 1 },
-    { id: 'sports', name: 'Sports', count: 1 }
+    { id: 'electronics', name: 'Electronics', count: 0 },
+    { id: 'photography', name: 'Photography', count: 0 },
+    { id: 'transportation', name: 'Transportation', count: 0 },
+    { id: 'tools', name: 'Tools', count: 0 },
+    { id: 'audio', name: 'Audio', count: 0 },
+    { id: 'outdoor', name: 'Outdoor', count: 0 },
+    { id: 'sports', name: 'Sports', count: 0 }
   ]
 
   const getCurrentPrice = (product) => {
+    const base = parseFloat(product.price) || 0
     switch (selectedPeriod) {
       case 'hour':
-        return product.hourlyRate
+        return +(base / 24)
       case 'day':
-        return product.dailyRate
+        return base
       case 'week':
-        return product.weeklyRate
+        return +(base * 7)
       case 'month':
-        return product.monthlyRate
+        return +(base * 30)
       default:
-        return product.dailyRate
+        return base
     }
   }
 
@@ -241,12 +294,12 @@ const ProductsPage = () => {
                     <div className="relative h-56 bg-slate-50 overflow-hidden">
                       <img
                         alt={product.name}
-                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!product.inStock ? 'grayscale' : ''}`}
-                        src={product.image}
+                        className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${!((product.quantity||0)>0) ? 'grayscale' : ''}`}
+                        src={(product.images && product.images[0] && product.images[0].url) || product.image || '/placeholder.jpg'}
                       />
 
                       {/* Status Badge */}
-                      {product.inStock && (
+                      {(product.quantity||0) > 0 && (
                         <div className="absolute top-4 left-4">
                           <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-bold border shadow-sm flex items-center gap-1 text-emerald-600 border-emerald-100">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 
@@ -268,7 +321,7 @@ const ProductsPage = () => {
                             {product.name}
                           </h3>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {product.tags.slice(0, 2).map((tag, index) => (
+                            {((product.attributes || []).map(a => a.value || a.name).slice(0,2)).map((tag, index) => (
                               <span key={index} className="text-xs text-slate-500 bg-slate-50 px-2 py-0.5 rounded">
                                 {tag}
                               </span>
@@ -285,10 +338,10 @@ const ProductsPage = () => {
                       <div className="flex items-end justify-between">
                         <div>
                           <p className="text-xs text-slate-500 mb-1">Starting from</p>
-                          <p className="text-2xl font-bold text-[#0d131c]">
-                            ₹{getCurrentPrice(product).toLocaleString()}
-                            <span className="text-sm text-slate-500 font-normal">/{selectedPeriod}</span>
-                          </p>
+                            <p className="text-2xl font-bold text-[#0d131c]">
+                              ₹{getCurrentPrice(product).toLocaleString()}
+                              <span className="text-sm text-slate-500 font-normal">/{selectedPeriod}</span>
+                            </p>
                         </div>
                         <button className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-1">
                           View
@@ -299,9 +352,9 @@ const ProductsPage = () => {
                       <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                         <span className="flex items-center gap-1">
                           <span className="material-symbols-outlined text-sm">shield</span>
-                          Deposit: ₹{product.deposit.toLocaleString()}
+                          Deposit: ₹{(parseFloat(product.securityDeposit) || 0).toLocaleString()}
                         </span>
-                        <span className="text-emerald-600 font-semibold">{product.reviews} reviews</span>
+                        <span className="text-emerald-600 font-semibold">{product.reviews || 0} reviews</span>
                       </div>
                     </div>
                   </Link>
