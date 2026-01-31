@@ -1,0 +1,27 @@
+/* Custom Styles for specific polish */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at 50% 0%, #eef2ff 0%, #f5f7f8 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #101722 0%, #257bf4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Hide scrollbar for horizontal scroll areas */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
