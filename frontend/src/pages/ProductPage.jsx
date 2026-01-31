@@ -15,6 +15,7 @@ function ProductPage() {
   const [selectedVariants, setSelectedVariants] = useState({})
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isInWishlist, setIsInWishlist] = useState(false)
 
   useEffect(() => {
     // Simulate API call to fetch product
@@ -23,6 +24,10 @@ function ProductPage() {
       const productData = PRODUCTS_DB[id]
       if (productData) {
         setProduct(productData)
+        // Check if product is already in wishlist
+        const existingWishlist = JSON.parse(localStorage.getItem('wishlist')) || []
+        const exists = existingWishlist.find(item => item.id === productData.id)
+        setIsInWishlist(!!exists)
       } else {
         // Product not found, redirect to products page
         navigate('/products')
@@ -44,6 +49,19 @@ function ProductPage() {
 
   if (!product) {
     return null
+  }
+
+  const getVariantPrice = () => {
+    if (!product.hasVariants || !product.variants) return 0
+    
+    let additionalPrice = 0
+    product.variants.forEach(variant => {
+      const selectedOption = selectedVariants[variant.id]
+      if (selectedOption !== undefined) {
+        additionalPrice += variant.prices[selectedOption]
+      }
+    })
+    return additionalPrice
   }
 
   const getCurrentPrice = () => {
@@ -95,6 +113,35 @@ function ProductPage() {
     return getCurrentPrice() * duration * quantity
   }
 
+  const addToCartDirectly = () => {
+    const orderData = {
+      product,
+      quantity,
+      startDate,
+      endDate,
+      period: selectedPeriod,
+      // Ensure totalPrice is a number
+      totalPrice: typeof calculateTotalPrice() === 'number' ? calculateTotalPrice() : 0, 
+      selectedVariants: product.hasVariants ? selectedVariants : null
+    }
+    
+    // 1. Get existing cart
+    const existingCart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    // 2. Add new item
+    const updatedCart = [...existingCart, orderData];
+    
+    // 3. Save back to localStorage
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    
+    // 4. Force navbar update
+    window.dispatchEvent(new Event('storage'));
+
+    console.log('Added to cart:', orderData);
+    // Navigate to cart instead of alert for better UX
+    navigate('/cart'); 
+  }
+
   const handleAddToCart = () => {
     if (!startDate || !endDate) {
       alert('Please select rental period')
@@ -110,22 +157,6 @@ function ProductPage() {
     addToCartDirectly()
   }
 
-  const addToCartDirectly = () => {
-    const orderData = {
-      product,
-      quantity,
-      startDate,
-      endDate,
-      period: selectedPeriod,
-      totalPrice: calculateTotalPrice(),
-      selectedVariants: product.hasVariants ? selectedVariants : null
-    }
-    
-    console.log('Adding to cart:', orderData)
-    alert('Product added to cart successfully!')
-    setShowVariantModal(false)
-  }
-
   const handleVariantChange = (variantId, optionIndex) => {
     setSelectedVariants(prev => ({
       ...prev,
@@ -133,21 +164,41 @@ function ProductPage() {
     }))
   }
 
-  const getVariantPrice = () => {
-    if (!product.hasVariants || !product.variants) return 0
+  // Toggle wishlist function
+  const handleToggleWishlist = () => {
+    const existingWishlist = JSON.parse(localStorage.getItem('wishlist')) || []
     
-    let additionalPrice = 0
-    product.variants.forEach(variant => {
-      const selectedOption = selectedVariants[variant.id]
-      if (selectedOption !== undefined) {
-        additionalPrice += variant.prices[selectedOption]
-      }
-    })
-    return additionalPrice
-  }
-
-  const handleAddToWishlist = () => {
-    alert('Added to wishlist!')
+    // Check if product already exists
+    const existsIndex = existingWishlist.findIndex(item => item.id === product.id)
+    
+    if (existsIndex !== -1) {
+      // Remove from wishlist
+      const updatedWishlist = existingWishlist.filter(item => item.id !== product.id)
+      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist))
+      setIsInWishlist(false)
+      
+      // Show notification
+      const notification = document.createElement('div')
+      notification.className = 'fixed top-24 right-6 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl z-50 animate-slide-in-right flex items-center gap-2'
+      notification.innerHTML = '<span class="text-xl">💔</span><span class="font-semibold">Removed from wishlist</span>'
+      document.body.appendChild(notification)
+      setTimeout(() => notification.remove(), 3000)
+    } else {
+      // Add to wishlist
+      const updatedWishlist = [...existingWishlist, product]
+      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist))
+      setIsInWishlist(true)
+      
+      // Show notification
+      const notification = document.createElement('div')
+      notification.className = 'fixed top-24 right-6 bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-xl shadow-2xl z-50 animate-slide-in-right flex items-center gap-2'
+      notification.innerHTML = '<span class="text-xl">❤️</span><span class="font-semibold">Added to wishlist!</span>'
+      document.body.appendChild(notification)
+      setTimeout(() => notification.remove(), 3000)
+    }
+    
+    // Trigger storage event for other tabs/components
+    window.dispatchEvent(new Event('storage'))
   }
 
   return (
@@ -180,10 +231,19 @@ function ProductPage() {
                 />
                 <div className="absolute top-4 right-4 flex flex-col gap-2">
                   <button 
-                    onClick={handleAddToWishlist}
-                    className="p-3 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg hover:bg-red-50 hover:text-red-500 transition-all duration-300 group"
+                    onClick={handleToggleWishlist}
+                    className={`p-3 backdrop-blur-sm rounded-xl shadow-lg transition-all duration-300 group transform hover:scale-110 ${
+                      isInWishlist 
+                        ? 'bg-gradient-to-br from-red-500 to-pink-500 text-white shadow-red-500/50' 
+                        : 'bg-white/90 hover:bg-red-50 hover:text-red-500'
+                    }`}
+                    title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
                   >
-                    <span className="material-symbols-outlined group-hover:scale-110 transition-transform">favorite</span>
+                    <span className={`material-symbols-outlined transition-transform ${
+                      isInWishlist ? 'filled-heart' : ''
+                    }`}>
+                      {isInWishlist ? 'favorite' : 'favorite_border'}
+                    </span>
                   </button>
                 </div>
                 <div className="absolute top-4 left-4">
