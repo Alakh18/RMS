@@ -30,7 +30,7 @@ function Navbar() {
 
         {/* Navigation Links */}
         <div className="hidden lg:flex items-center gap-1 ml-4 xl:ml-8">
-          <a href="/product" className="relative px-4 py-2 text-sm font-semibold text-slate-700 hover:text-primary transition-all duration-300 group">
+          <a href="/products" className="relative px-4 py-2 mt-1 text-sm font-semibold text-slate-700 hover:text-primary transition-all duration-300 group">
             <span className="relative z-10">Products</span>
             <span className="absolute inset-0 bg-primary/10 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300"></span>
           </a>

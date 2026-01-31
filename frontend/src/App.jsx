@@ -9,6 +9,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ProductPage from './pages/ProductPage'
 import Profile from './pages/Profile'
+import ProductsPage from './pages/ProductsPage'
 
 const PRODUCTS = [
   {
@@ -82,6 +83,8 @@ function App() {
       <Route path="/vendor-signup" element={<VendorSignup />} />
       <Route path="/product" element={<ProductPage />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/products" element={<ProductsPage />} />
+      <Route path="/product/:id" element={<ProductPage />} />
     </Routes>
   )
 }

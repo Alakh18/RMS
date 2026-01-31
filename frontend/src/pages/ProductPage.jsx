@@ -1,51 +1,70 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { PRODUCTS_DB } from '../data/products'
 
 function ProductPage() {
+  const { id } = useParams()
+  const navigate = useNavigate()
   const [quantity, setQuantity] = useState(1)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [selectedPeriod, setSelectedPeriod] = useState('day')
+  const [showVariantModal, setShowVariantModal] = useState(false)
+  const [selectedVariants, setSelectedVariants] = useState({})
+  const [product, setProduct] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // Sample product data - in real app, this would come from API/props
-  const product = {
-    id: 1,
-    name: "Professional Desktop Computer",
-    basePrice: 150,
-    hourlyRate: 25,
-    dailyRate: 150,
-    weeklyRate: 900,
-    monthlyRate: 3000,
-    image: "https://images.unsplash.com/photo-1587831990711-23ca6441447b?w=500&h=500&fit=crop",
-    description: "High-performance desktop computer with 27-inch monitor, perfect for professional work, video editing, and gaming.",
-    specifications: [
-      "Intel Core i7 Processor",
-      "32GB RAM",
-      "1TB SSD",
-      "NVIDIA RTX 3070",
-      "27-inch 4K Monitor",
-      "Wireless Keyboard & Mouse"
-    ],
-    availability: "Available",
-    stockQuantity: 5,
-    category: "Electronics",
-    brand: "Dell"
+  useEffect(() => {
+    // Simulate API call to fetch product
+    setLoading(true)
+    setTimeout(() => {
+      const productData = PRODUCTS_DB[id]
+      if (productData) {
+        setProduct(productData)
+      } else {
+        // Product not found, redirect to products page
+        navigate('/products')
+      }
+      setLoading(false)
+    }, 300)
+  }, [id, navigate])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading product...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return null
   }
 
   const getCurrentPrice = () => {
+    let basePrice = 0
     switch (selectedPeriod) {
       case 'hour':
-        return product.hourlyRate
+        basePrice = product.hourlyRate
+        break
       case 'day':
-        return product.dailyRate
+        basePrice = product.dailyRate
+        break
       case 'week':
-        return product.weeklyRate
+        basePrice = product.weeklyRate
+        break
       case 'month':
-        return product.monthlyRate
+        basePrice = product.monthlyRate
+        break
       default:
-        return product.dailyRate
+        basePrice = product.dailyRate
     }
+    return basePrice + getVariantPrice()
   }
 
   const calculateTotalPrice = () => {
@@ -82,17 +101,49 @@ function ProductPage() {
       return
     }
     
+    // If product has variants, open modal instead of adding directly
+    if (product.hasVariants) {
+      setShowVariantModal(true)
+      return
+    }
+    
+    addToCartDirectly()
+  }
+
+  const addToCartDirectly = () => {
     const orderData = {
       product,
       quantity,
       startDate,
       endDate,
       period: selectedPeriod,
-      totalPrice: calculateTotalPrice()
+      totalPrice: calculateTotalPrice(),
+      selectedVariants: product.hasVariants ? selectedVariants : null
     }
     
     console.log('Adding to cart:', orderData)
     alert('Product added to cart successfully!')
+    setShowVariantModal(false)
+  }
+
+  const handleVariantChange = (variantId, optionIndex) => {
+    setSelectedVariants(prev => ({
+      ...prev,
+      [variantId]: optionIndex
+    }))
+  }
+
+  const getVariantPrice = () => {
+    if (!product.hasVariants || !product.variants) return 0
+    
+    let additionalPrice = 0
+    product.variants.forEach(variant => {
+      const selectedOption = selectedVariants[variant.id]
+      if (selectedOption !== undefined) {
+        additionalPrice += variant.prices[selectedOption]
+      }
+    })
+    return additionalPrice
   }
 
   const handleAddToWishlist = () => {
@@ -354,6 +405,120 @@ function ProductPage() {
           </div>
         </div>
       </div>
+
+      {/* Variant Selection Modal */}
+      {showVariantModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <h2 className="text-2xl font-bold text-slate-900">Configure Product</h2>
+              <button
+                onClick={() => setShowVariantModal(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <span className="material-symbols-outlined text-slate-600">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+              <div className="space-y-6">
+                {product.variants && product.variants.map((variant) => (
+                  <div key={variant.id} className="space-y-3">
+                    <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-primary rounded-full"></span>
+                      {variant.attribute}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {variant.options.map((option, index) => (
+                        <label
+                          key={index}
+                          className={`relative flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                            selectedVariants[variant.id] === index
+                              ? 'border-primary bg-primary/5 shadow-md'
+                              : 'border-slate-200 hover:border-primary/50 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <input
+                              type="radio"
+                              name={variant.id}
+                              checked={selectedVariants[variant.id] === index}
+                              onChange={() => handleVariantChange(variant.id, index)}
+                              className="w-5 h-5 text-primary focus:ring-primary focus:ring-2"
+                            />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium text-slate-900 block">
+                                {option}
+                              </span>
+                              {variant.prices[index] > 0 && (
+                                <span className="text-xs text-green-600 font-semibold">
+                                  +₹{variant.prices[index]}/{selectedPeriod}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {selectedVariants[variant.id] === index && (
+                            <span className="material-symbols-outlined text-primary text-[20px]">
+                              check_circle
+                            </span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price Summary */}
+              {Object.keys(selectedVariants).length > 0 && (
+                <div className="mt-6 p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">Base Price:</span>
+                    <span className="text-sm font-semibold text-slate-900">
+                      ₹{product.dailyRate}/{selectedPeriod}
+                    </span>
+                  </div>
+                  {getVariantPrice() > 0 && (
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-slate-600">Variants:</span>
+                      <span className="text-sm font-semibold text-green-600">
+                        +₹{getVariantPrice()}/{selectedPeriod}
+                      </span>
+                    </div>
+                  )}
+                  <div className="h-px bg-slate-200 my-2"></div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-bold text-slate-900">Total Price:</span>
+                    <span className="text-xl font-bold text-primary">
+                      ₹{getCurrentPrice()}/{selectedPeriod}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
+              <button
+                onClick={() => setShowVariantModal(false)}
+                className="px-6 py-3 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addToCartDirectly}
+                disabled={product.variants && Object.keys(selectedVariants).length !== product.variants.length}
+                className="px-6 py-3 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined">shopping_cart</span>
+                Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
