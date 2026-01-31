@@ -7,6 +7,8 @@ import { PRODUCTS_DB } from '../data/products'
 function ProductPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  
+  // State Management
   const [quantity, setQuantity] = useState(1)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -16,20 +18,144 @@ function ProductPage() {
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Fetch Product Data (Simulated for display)
   useEffect(() => {
-    // Simulate API call to fetch product
     setLoading(true)
+    // In a real app, you would fetch from: GET /api/products/${id}
+    // For now, we use the DB file to show the UI
     setTimeout(() => {
       const productData = PRODUCTS_DB[id]
       if (productData) {
         setProduct(productData)
       } else {
-        // Product not found, redirect to products page
         navigate('/products')
       }
       setLoading(false)
     }, 300)
   }, [id, navigate])
+
+  // --- Pricing Logic ---
+  const getVariantPrice = () => {
+    if (!product?.hasVariants || !product?.variants) return 0
+    let additionalPrice = 0
+    product.variants.forEach(variant => {
+      const selectedOption = selectedVariants[variant.id]
+      if (selectedOption !== undefined) {
+        additionalPrice += variant.prices[selectedOption]
+      }
+    })
+    return additionalPrice
+  }
+
+  const getCurrentPrice = () => {
+    if (!product) return 0
+    let basePrice = 0
+    switch (selectedPeriod) {
+      case 'hour': basePrice = product.hourlyRate; break;
+      case 'day': basePrice = product.dailyRate; break;
+      case 'week': basePrice = product.weeklyRate; break;
+      case 'month': basePrice = product.monthlyRate; break;
+      default: basePrice = product.dailyRate;
+    }
+    return basePrice + getVariantPrice()
+  }
+
+  const calculateTotalPrice = () => {
+    if (!startDate || !endDate) return 0
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const diffTime = Math.abs(end - start)
+    
+    let duration = 0
+    switch (selectedPeriod) {
+      case 'hour': duration = Math.ceil(diffTime / (1000 * 60 * 60)); break;
+      case 'day': duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); break;
+      case 'week': duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7)); break;
+      case 'month': duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30)); break;
+      default: duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+    return getCurrentPrice() * duration * quantity
+  }
+
+  // --- Handlers ---
+
+  const handleVariantChange = (variantId, optionIndex) => {
+    setSelectedVariants(prev => ({
+      ...prev,
+      [variantId]: optionIndex
+    }))
+  }
+
+  // ✅ NEW: ADD TO CART WITH BACKEND API INTEGRATION
+  const addToCartDirectly = async () => {
+    try {
+      // 1. Check Authentication
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert("Please login to add items to your cart.");
+        return navigate('/login');
+      }
+
+      // 2. Validate Dates
+      if (!startDate || !endDate) {
+        alert("Please select a valid start and end date.");
+        return;
+      }
+
+      // 3. Call Backend API
+      // Using fallback to localhost if env variable is missing
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+      
+      const res = await fetch(`${API_BASE}/api/orders/cart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          productId: parseInt(id), // Ensure ID is a number matches Backend
+          quantity: quantity,
+          startDate: startDate,
+          endDate: endDate
+        })
+      });
+
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert('Product added to quotation successfully!');
+        setShowVariantModal(false); // Close modal if open
+        navigate('/cart'); // Redirect user to cart
+      } else {
+        alert(data.error || 'Failed to add to cart');
+      }
+
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      alert("Something went wrong. Please check your connection.");
+    }
+  }
+
+  const handleAddToCart = () => {
+    if (!startDate || !endDate) {
+      alert('Please select rental period')
+      return
+    }
+    
+    // If product has variants, open modal first
+    if (product.hasVariants) {
+      setShowVariantModal(true)
+      return
+    }
+    
+    addToCartDirectly()
+  }
+
+  const handleAddToWishlist = () => {
+    alert('Added to wishlist!')
+  }
+
+  // --- Render ---
 
   if (loading) {
     return (
@@ -42,113 +168,7 @@ function ProductPage() {
     )
   }
 
-  if (!product) {
-    return null
-  }
-
-  const getCurrentPrice = () => {
-    let basePrice = 0
-    switch (selectedPeriod) {
-      case 'hour':
-        basePrice = product.hourlyRate
-        break
-      case 'day':
-        basePrice = product.dailyRate
-        break
-      case 'week':
-        basePrice = product.weeklyRate
-        break
-      case 'month':
-        basePrice = product.monthlyRate
-        break
-      default:
-        basePrice = product.dailyRate
-    }
-    return basePrice + getVariantPrice()
-  }
-
-  const calculateTotalPrice = () => {
-    if (!startDate || !endDate) return 0
-    
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const diffTime = Math.abs(end - start)
-    
-    let duration = 0
-    switch (selectedPeriod) {
-      case 'hour':
-        duration = Math.ceil(diffTime / (1000 * 60 * 60))
-        break
-      case 'day':
-        duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-        break
-      case 'week':
-        duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7))
-        break
-      case 'month':
-        duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30))
-        break
-      default:
-        duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    }
-    
-    return getCurrentPrice() * duration * quantity
-  }
-
-  const handleAddToCart = () => {
-    if (!startDate || !endDate) {
-      alert('Please select rental period')
-      return
-    }
-    
-    // If product has variants, open modal instead of adding directly
-    if (product.hasVariants) {
-      setShowVariantModal(true)
-      return
-    }
-    
-    addToCartDirectly()
-  }
-
-  const addToCartDirectly = () => {
-    const orderData = {
-      product,
-      quantity,
-      startDate,
-      endDate,
-      period: selectedPeriod,
-      totalPrice: calculateTotalPrice(),
-      selectedVariants: product.hasVariants ? selectedVariants : null
-    }
-    
-    console.log('Adding to cart:', orderData)
-    alert('Product added to cart successfully!')
-    setShowVariantModal(false)
-  }
-
-  const handleVariantChange = (variantId, optionIndex) => {
-    setSelectedVariants(prev => ({
-      ...prev,
-      [variantId]: optionIndex
-    }))
-  }
-
-  const getVariantPrice = () => {
-    if (!product.hasVariants || !product.variants) return 0
-    
-    let additionalPrice = 0
-    product.variants.forEach(variant => {
-      const selectedOption = selectedVariants[variant.id]
-      if (selectedOption !== undefined) {
-        additionalPrice += variant.prices[selectedOption]
-      }
-    })
-    return additionalPrice
-  }
-
-  const handleAddToWishlist = () => {
-    alert('Added to wishlist!')
-  }
+  if (!product) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -367,7 +387,7 @@ function ProductPage() {
                   Specifications
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {product.specifications.map((spec, index) => (
+                  {product.specifications?.map((spec, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                       <span className="material-symbols-outlined text-primary text-[20px]">check_circle</span>
                       <span className="text-slate-700">{spec}</span>
@@ -508,7 +528,7 @@ function ProductPage() {
                 Cancel
               </button>
               <button
-                onClick={addToCartDirectly}
+                onClick={addToCartDirectly} // ✅ Connected to Backend Function
                 disabled={product.variants && Object.keys(selectedVariants).length !== product.variants.length}
                 className="px-6 py-3 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >

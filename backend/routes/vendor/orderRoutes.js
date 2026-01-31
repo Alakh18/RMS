@@ -1,7 +1,7 @@
 // backend/routes/vendor/orderRoutes.js
 const express = require('express');
 const router = express.Router();
-const vendorAuth = require('../../middleware/vendorAuth');
+const vendorAuth = require('../../middlewares/vendorAuth');
 const {
   getVendorOrders,
   updateOrderStatus,

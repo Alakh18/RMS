@@ -1,15 +1,14 @@
-// backend/routes/vendor/quotationRoutes.js
 const express = require('express');
 const router = express.Router();
-const vendorAuth = require('../../middleware/vendorAuth');
-const {
-  getVendorQuotations,
-  approveQuotation,
-  rejectQuotation,
+const { 
+  getVendorQuotations, 
+  approveQuotation, 
+  rejectQuotation 
 } = require('../../controllers/vendor/quotationController');
+const { verifyToken } = require('../../middlewares/authMiddleware');
+// You might also have a vendorMiddleware to check role='VENDOR'
 
-// All quotation routes require vendor authentication
-router.use(vendorAuth);
+router.use(verifyToken);
 
 // GET /api/vendor/quotations
 router.get('/', getVendorQuotations);

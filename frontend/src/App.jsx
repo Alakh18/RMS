@@ -12,6 +12,7 @@ import Footer from './components/Footer'
 import ProductPage from './pages/ProductPage'
 import Profile from './pages/Profile'
 import ProductsPage from './pages/ProductsPage'
+import Cart from './pages/Cart'
 
 const PRODUCTS = [
   {
@@ -91,6 +92,7 @@ function App() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/product/:id" element={<ProductPage />} />
+      <Route path="/cart" element={<Cart />} />
       <Route path="/admin" element={<AdminDashboard />} />
     </Routes>
   )

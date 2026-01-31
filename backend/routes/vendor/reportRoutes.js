@@ -1,7 +1,7 @@
 // backend/routes/vendor/reportRoutes.js
 const express = require('express');
 const router = express.Router();
-const vendorAuth = require('../../middleware/vendorAuth');
+const vendorAuth = require('../../middlewares/vendorAuth');
 const { getVendorReports } = require('../../controllers/vendor/reportController');
 
 // All report routes require vendor authentication
