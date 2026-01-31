@@ -2,12 +2,9 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
-<<<<<<< HEAD
 const orderRoutes = require('./routes/orderRoutes');
-=======
 const vendorRoutes = require('./routes/vendor');
 
->>>>>>> 9c6baa7726bfe505ba86a673199275745d3c017e
 dotenv.config();
 
 const app = express();
