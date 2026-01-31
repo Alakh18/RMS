@@ -7,6 +7,7 @@ const vendorRoutes = require('./routes/vendor');
 dotenv.config();
 
 const app = express();
+app.use('/api/admin', require('./routes/adminRoutes'));
 const PORT = process.env.PORT || 3000;
 
 // Global Middlewares

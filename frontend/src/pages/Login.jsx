@@ -14,33 +14,42 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  // src/pages/Login.jsx
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/login`, formData);
+// ... imports remain the same
 
-      if (response.data && response.data.token) {
-        // Save token and user info
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // Role-based redirection
-        const user = response.data.user;
-        if (user.role === 'VENDOR') {
-          navigate('/vendor');
-        } else {
-          navigate('/');
-        }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // 1. Save Token
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      alert(`Welcome back, ${data.user.firstName}!`);
+
+      // 2. ✅ CHECK ROLE & REDIRECT CORRECTLY
+      if (data.user.role === 'ADMIN') {
+        navigate('/admin'); // Go to Dashboard
+      } else {
+        navigate('/');      // Go to Home
       }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
+
+    } else {
+      alert(data.error);
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 hero-gradient font-display antialiased text-[#0d131c]">
