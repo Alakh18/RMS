@@ -3,6 +3,7 @@ import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import ProductPage from './pages/ProductPage'
+import ProductsPage from './pages/ProductsPage'
 
 const PRODUCTS = [
   {
@@ -71,7 +72,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/product" element={<ProductPage />} />
+      <Route path="/products" element={<ProductsPage />} />
+      <Route path="/product/:id" element={<ProductPage />} />
     </Routes>
   )
 }

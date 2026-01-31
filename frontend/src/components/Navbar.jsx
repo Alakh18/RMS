@@ -7,16 +7,16 @@ function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 py-3 sm:py-4 transition-all duration-300">
       <div className="max-w-7xl mx-auto bg-white rounded-2xl px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg border border-slate-200 hover:shadow-xl transition-shadow duration-300">
         {/* Logo */}
-        <div className="flex items-center gap-3 shrink-0 group cursor-pointer">
+        <a href="/" className="flex items-center gap-3 shrink-0 group cursor-pointer">
           <div className="size-9 sm:size-10 bg-gradient-to-br from-primary via-primary to-accent rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-primary/50 group-hover:scale-105 transition-all duration-300">
             <span className="material-symbols-outlined text-[22px] sm:text-[24px]">hexagon</span>
           </div>
           <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-[#0d131c] to-primary bg-clip-text text-transparent">RentalEco</span>
-        </div>
+        </a>
 
         {/* Navigation Links */}
         <div className="hidden lg:flex items-center gap-1 ml-4 xl:ml-8">
-          <a href="/product" className="relative px-4 py-2 text-sm font-semibold text-slate-700 hover:text-primary transition-all duration-300 group">
+          <a href="/products" className="relative px-4 py-2 mt-1 text-sm font-semibold text-slate-700 hover:text-primary transition-all duration-300 group">
             <span className="relative z-10">Products</span>
             <span className="absolute inset-0 bg-primary/10 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300"></span>
           </a>
