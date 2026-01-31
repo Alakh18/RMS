@@ -7,6 +7,8 @@ import VendorSignup from './pages/VendorSignup'
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import ProductPage from './pages/ProductPage'
+import ProductsPage from './pages/ProductsPage'
 
 const PRODUCTS = [
   {
