@@ -179,17 +179,3 @@ export const downloadInvoice = async (invoiceId) => {
     throw error;
   }
 };
-
-// Reports APIs
-export const fetchReports = async (dateRange) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/reports`, {
-      params: dateRange,
-      headers: getAuthHeader(),
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching reports:', error);
-    throw error;
-  }
-};
