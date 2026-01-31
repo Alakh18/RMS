@@ -25,6 +25,7 @@ const Products = () => {
     isRentable: true,
     isPublished: false,
     attributes: [],
+    images: [],
   });
   const [formErrors, setFormErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -63,6 +64,7 @@ const Products = () => {
         isRentable: product.isRentable,
         isPublished: product.isPublished,
         attributes: product.attributes || [],
+        images: product.images || [],
       });
     } else {
       setEditingProduct(null);
@@ -77,6 +79,7 @@ const Products = () => {
         isRentable: true,
         isPublished: false,
         attributes: [],
+        images: [],
       });
     }
     setFormErrors({});
@@ -97,6 +100,7 @@ const Products = () => {
       isRentable: true,
       isPublished: false,
       attributes: [],
+      images: [],
     });
     setFormErrors({});
   };
@@ -135,6 +139,29 @@ const Products = () => {
     setFormData(prev => ({
       ...prev,
       attributes: prev.attributes.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleImageChange = (index, field, value) => {
+    const newImages = [...formData.images];
+    newImages[index] = { ...newImages[index], [field]: value };
+    setFormData(prev => ({
+      ...prev,
+      images: newImages,
+    }));
+  };
+
+  const handleAddImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, { url: '', altText: '', isPrimary: prev.images.length === 0 }],
+    }));
+  };
+
+  const handleRemoveImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
     }));
   };
 
@@ -504,6 +531,60 @@ const Products = () => {
                       >
                         <span className="material-symbols-outlined text-sm text-red-600">close</span>
                       </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Images */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-slate-900">
+                    Images
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddImage}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    + Add Image
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {formData.images.map((image, idx) => (
+                    <div key={idx} className="p-3 border border-slate-200 rounded-lg space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Image URL (e.g., https://example.com/image.jpg)"
+                        value={image.url || ''}
+                        onChange={(e) => handleImageChange(idx, 'url', e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Alt text (optional)"
+                        value={image.altText || ''}
+                        onChange={(e) => handleImageChange(idx, 'altText', e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={image.isPrimary || false}
+                            onChange={(e) => handleImageChange(idx, 'isPrimary', e.target.checked)}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm font-medium text-slate-900">Primary Image</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="p-2 hover:bg-red-50 rounded-lg"
+                        >
+                          <span className="material-symbols-outlined text-sm text-red-600">delete</span>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
