@@ -1,6 +1,37 @@
 // src/controllers/orderController.js
 const prisma = require('../src/prisma');
 
+const recalcOrderTotals = async (tx, orderId) => {
+  const items = await tx.orderItem.findMany({ where: { orderId } });
+  if (!items.length) {
+    return tx.order.update({
+      where: { id: orderId },
+      data: { totalAmount: 0 }
+    });
+  }
+
+  const oneDay = 24 * 60 * 60 * 1000;
+  let total = 0;
+  let minStart = items[0].startDate;
+  let maxEnd = items[0].endDate;
+
+  for (const item of items) {
+    const days = Math.round(Math.abs((item.endDate - item.startDate) / oneDay)) || 1;
+    total += Number(item.priceAtBooking) * item.quantity * days;
+    if (item.startDate < minStart) minStart = item.startDate;
+    if (item.endDate > maxEnd) maxEnd = item.endDate;
+  }
+
+  return tx.order.update({
+    where: { id: orderId },
+    data: {
+      totalAmount: total,
+      startDate: minStart,
+      endDate: maxEnd,
+    }
+  });
+};
+
 // ==========================================
 // 1. ADD TO QUOTATION (Add to Cart)
 // ==========================================
@@ -59,7 +90,8 @@ const addToCart = async (req, res) => {
       }
     });
 
-    // (Optional: Recalculate Order Total here)
+    // Recalculate Order Total & Dates
+    await recalcOrderTotals(prisma, order.id);
 
     res.json({ message: 'Item added to quotation', orderId: order.id });
 
@@ -76,6 +108,7 @@ const confirmOrder = async (req, res) => {
   try {
     const { orderId } = req.body;
     const userId = req.user.userId;
+    let confirmedOrder = null;
 
     // We use a Transaction ($transaction) to ensure that we check stock 
     // AND confirm the order at the exact same millisecond.
@@ -123,21 +156,53 @@ const confirmOrder = async (req, res) => {
         }
       }
 
-      // 3. If the loop finishes, it means STOCK IS AVAILABLE.
+      // 3. Recalculate totals and order dates before confirmation
+      await recalcOrderTotals(tx, orderId);
+
+      // 4. If the loop finishes, it means STOCK IS AVAILABLE.
       // Update status to CONFIRMED (This reserves the stock)
-      await tx.order.update({
+      const updatedOrder = await tx.order.update({
         where: { id: orderId },
         data: { 
           status: 'CONFIRMED',
           orderNumber: `ORD-${Date.now()}` // Change ID from QTN to ORD
         }
       });
+      confirmedOrder = updatedOrder;
+
+      // 5. Create Invoice and Payment record if not exists
+      const existingInvoice = await tx.invoice.findFirst({
+        where: { orderId: updatedOrder.id }
+      });
+
+      if (!existingInvoice) {
+        const invoice = await tx.invoice.create({
+          data: {
+            orderId: updatedOrder.id,
+            invoiceNumber: `INV-${Date.now()}`,
+            status: 'PAID',
+            totalAmount: updatedOrder.totalAmount,
+            paidAmount: updatedOrder.totalAmount,
+            balanceAmount: 0,
+            dueDate: new Date(),
+          }
+        });
+
+        await tx.payment.create({
+          data: {
+            invoiceId: invoice.id,
+            amount: updatedOrder.totalAmount,
+            method: 'CARD',
+            transactionId: `PAY-${Date.now()}`,
+          }
+        });
+      }
       
       // 4. (Optional) Create Invoice here automatically
       // await tx.invoice.create({ ... })
     });
 
-    res.json({ success: true, message: 'Order Confirmed! Stock Reserved.' });
+    res.json({ success: true, message: 'Order Confirmed! Stock Reserved.', orderId, orderNumber: confirmedOrder?.orderNumber });
 
   } catch (error) {
     console.error("Confirm Order Error:", error);

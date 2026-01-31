@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { addItemToCart, confirmOrder } from '../services/orderApi';
 
 const PaymentPage = () => {
   const navigate = useNavigate();
@@ -37,26 +38,60 @@ const PaymentPage = () => {
   );
   const total = subTotal;
 
-  const handlePayNow = () => {
+  const handlePayNow = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to place an order.');
+      navigate('/login');
+      return;
+    }
+
     setIsProcessing(true);
-    
-    setTimeout(() => {
-      setIsProcessing(false);
-      
-      const orderId = 'SO' + Math.floor(100000 + Math.random() * 900000);
+
+    try {
+      let orderId = null;
+
+      for (const item of cartItems) {
+        const productId = item.product?.id || item.productId;
+        if (!productId) continue;
+
+        const response = await addItemToCart({
+          productId,
+          quantity: item.quantity,
+          startDate: item.startDate,
+          endDate: item.endDate,
+        });
+
+        if (!orderId && response?.orderId) {
+          orderId = response.orderId;
+        }
+      }
+
+      if (!orderId) {
+        throw new Error('Unable to create order. Please try again.');
+      }
+
+      const confirmRes = await confirmOrder(orderId);
+      const orderNumber = confirmRes?.orderNumber || `ORD-${orderId}`;
+
       const orderData = {
         orderItems: cartItems,
         total,
         subTotal,
         address,
-        orderId
+        orderId: orderNumber,
       };
 
       localStorage.removeItem('cart');
       window.dispatchEvent(new Event('storage'));
-      
+
       navigate('/order-confirmation', { state: orderData });
-    }, 2000);
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Payment failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (

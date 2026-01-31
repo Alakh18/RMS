@@ -7,8 +7,6 @@ const orderRoutes = require('./routes/orderRoutes');const vendorRoutes = require
 dotenv.config();
 
 const app = express();
-app.use('/api/orders', orderRoutes);
-app.use('/api/admin', require('./routes/adminRoutes'));
 const PORT = process.env.PORT || 3000;
 
 // Global Middlewares
@@ -18,6 +16,10 @@ app.use(cors());         // Enable CORS for your friend's frontend
 // Route Middlewares
 // Customer authentication routes
 app.use('/api/auth', authRoutes);
+
+// Orders and admin routes
+app.use('/api/orders', orderRoutes);
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Vendor routes (protected by vendorAuth middleware)
 app.use('/api/vendor', vendorRoutes);
