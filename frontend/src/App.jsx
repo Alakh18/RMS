@@ -1,6 +1,8 @@
+import { Routes, Route } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import ProductPage from './pages/ProductPage'
 
 const PRODUCTS = [
   {
@@ -66,6 +68,15 @@ const PRODUCTS = [
 ];
 
 function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/product" element={<ProductPage />} />
+    </Routes>
+  )
+}
+
+function HomePage() {
   return (
     <div className="bg-background-light text-[#0d131c] font-display antialiased overflow-x-hidden selection:bg-primary/20 selection:text-primary">
       {/* Navbar Component */}
