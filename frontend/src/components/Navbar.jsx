@@ -5,14 +5,31 @@ function Navbar() {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [cartCount, setCartCount] = useState(0); // New state for cart count
   const dropdownRef = useRef(null);
 
-  // Load user data when component mounts
+  // Load user data and cart count when component mounts
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const updateAuthAndCart = () => {
+      // Update User
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+
+      // Update Cart Count
+      const cart = JSON.parse(localStorage.getItem('cart')) || [];
+      setCartCount(cart.length);
+    };
+
+    // Run on mount
+    updateAuthAndCart();
+
+    // Listen for changes (Login/Logout or Add to Cart)
+    window.addEventListener('storage', updateAuthAndCart);
+    
+    // Cleanup
+    return () => window.removeEventListener('storage', updateAuthAndCart);
   }, []);
 
   // Close dropdown if clicking outside
@@ -90,11 +107,16 @@ function Navbar() {
             <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">favorite</span>
           </button>
 
-          {/* Cart */}
-          <button className="p-2 sm:p-2.5 text-slate-600 hover:text-primary transition-all duration-300 rounded-xl hover:bg-primary/10 relative group">
+          {/* UPDATED: Cart Button is now a Link and uses state */}
+          <Link 
+            to="/cart"
+            className="p-2 sm:p-2.5 text-slate-600 hover:text-primary transition-all duration-300 rounded-xl hover:bg-primary/10 relative group block"
+          >
             <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">shopping_cart</span>
-            <span className="absolute -top-0.5 -right-0.5 size-5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">0</span>
-          </button>
+            <span className="absolute -top-0.5 -right-0.5 size-5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform duration-300">
+              {cartCount}
+            </span>
+          </Link>
 
           {/* Profile Dropdown Section */}
           <div className="relative ml-1 sm:ml-2" ref={dropdownRef}>

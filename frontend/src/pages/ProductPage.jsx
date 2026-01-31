@@ -46,6 +46,19 @@ function ProductPage() {
     return null
   }
 
+  const getVariantPrice = () => {
+    if (!product.hasVariants || !product.variants) return 0
+    
+    let additionalPrice = 0
+    product.variants.forEach(variant => {
+      const selectedOption = selectedVariants[variant.id]
+      if (selectedOption !== undefined) {
+        additionalPrice += variant.prices[selectedOption]
+      }
+    })
+    return additionalPrice
+  }
+
   const getCurrentPrice = () => {
     let basePrice = 0
     switch (selectedPeriod) {
@@ -95,6 +108,37 @@ function ProductPage() {
     return getCurrentPrice() * duration * quantity
   }
 
+  // --- UPDATED FUNCTION START ---
+  const addToCartDirectly = () => {
+    const orderData = {
+      product,
+      quantity,
+      startDate,
+      endDate,
+      period: selectedPeriod,
+      // Ensure totalPrice is a number
+      totalPrice: typeof calculateTotalPrice() === 'number' ? calculateTotalPrice() : 0, 
+      selectedVariants: product.hasVariants ? selectedVariants : null
+    }
+    
+    // 1. Get existing cart
+    const existingCart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    // 2. Add new item
+    const updatedCart = [...existingCart, orderData];
+    
+    // 3. Save back to localStorage
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    
+    // 4. Force navbar update (optional, if you have a badge listener)
+    window.dispatchEvent(new Event('storage'));
+
+    console.log('Added to cart:', orderData);
+    // Navigate to cart instead of alert for better UX
+    navigate('/cart'); 
+  }
+  // --- UPDATED FUNCTION END ---
+
   const handleAddToCart = () => {
     if (!startDate || !endDate) {
       alert('Please select rental period')
@@ -110,40 +154,11 @@ function ProductPage() {
     addToCartDirectly()
   }
 
-  const addToCartDirectly = () => {
-    const orderData = {
-      product,
-      quantity,
-      startDate,
-      endDate,
-      period: selectedPeriod,
-      totalPrice: calculateTotalPrice(),
-      selectedVariants: product.hasVariants ? selectedVariants : null
-    }
-    
-    console.log('Adding to cart:', orderData)
-    alert('Product added to cart successfully!')
-    setShowVariantModal(false)
-  }
-
   const handleVariantChange = (variantId, optionIndex) => {
     setSelectedVariants(prev => ({
       ...prev,
       [variantId]: optionIndex
     }))
-  }
-
-  const getVariantPrice = () => {
-    if (!product.hasVariants || !product.variants) return 0
-    
-    let additionalPrice = 0
-    product.variants.forEach(variant => {
-      const selectedOption = selectedVariants[variant.id]
-      if (selectedOption !== undefined) {
-        additionalPrice += variant.prices[selectedOption]
-      }
-    })
-    return additionalPrice
   }
 
   const handleAddToWishlist = () => {
