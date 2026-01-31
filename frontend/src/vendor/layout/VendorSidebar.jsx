@@ -13,7 +13,6 @@ const VendorSidebar = ({ isOpen, onToggle }) => {
     { label: 'Pickups', path: '/vendor/pickups', icon: 'local_shipping' },
     { label: 'Returns', path: '/vendor/returns', icon: 'assignment_return' },
     { label: 'Invoices', path: '/vendor/invoices', icon: 'receipt_long' },
-    { label: 'Reports', path: '/vendor/reports', icon: 'bar_chart' },
     { label: 'Settings', path: '/vendor/settings', icon: 'settings' },
   ];
 

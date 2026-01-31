@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { PRODUCTS_DB } from '../data/products'
+import { fetchProducts } from '../services/productApi'
 
 function ProductPage() {
   const { id } = useParams()
@@ -17,23 +17,74 @@ function ProductPage() {
   const [loading, setLoading] = useState(true)
   const [isInWishlist, setIsInWishlist] = useState(false)
 
+  const mapProduct = (p) => {
+    const priceNum = parseFloat(p.price) || 0
+    const images = Array.isArray(p.images) ? p.images.map(img => img.url || img) : []
+    const primaryImage = Array.isArray(p.images)
+      ? (p.images.find(img => img.isPrimary)?.url || images[0])
+      : (images[0] || '/placeholder.jpg')
+    const categoryAttr = (p.attributes || []).find(a => a.name && a.name.toLowerCase() === 'category')
+    const specs = (p.attributes || []).map(a => {
+      if (!a) return null
+      if (a.value && a.name) return `${a.name}: ${a.value}`
+      return a.value || a.name || null
+    }).filter(Boolean)
+
+    return {
+      id: p.id,
+      name: p.name,
+      description: p.description || 'No description available for this product.',
+      brand: p.brand || 'General',
+      category: categoryAttr?.value || 'General',
+      image: primaryImage || '/placeholder.jpg',
+      images: images.length ? images : [primaryImage || '/placeholder.jpg'],
+      price: p.price,
+      hourlyRate: +(priceNum / 24).toFixed(2),
+      dailyRate: +priceNum,
+      weeklyRate: +(priceNum * 7).toFixed(2),
+      monthlyRate: +(priceNum * 30).toFixed(2),
+      securityDeposit: parseFloat(p.securityDeposit) || 0,
+      stockQuantity: p.quantity ?? 0,
+      availability: (p.quantity || 0) > 0 ? 'Available' : 'Out of Stock',
+      specifications: specs.length ? specs : ['No specifications provided'],
+      hasVariants: false,
+      variants: [],
+      rating: 4.5,
+      reviews: 0,
+      raw: p,
+    }
+  }
+
   useEffect(() => {
-    // Simulate API call to fetch product
-    setLoading(true)
-    setTimeout(() => {
-      const productData = PRODUCTS_DB[id]
-      if (productData) {
-        setProduct(productData)
-        // Check if product is already in wishlist
-        const existingWishlist = JSON.parse(localStorage.getItem('wishlist')) || []
-        const exists = existingWishlist.find(item => item.id === productData.id)
-        setIsInWishlist(!!exists)
-      } else {
-        // Product not found, redirect to products page
+    const loadProduct = async () => {
+      try {
+        setLoading(true)
+        const response = await fetchProducts()
+        if (response?.success && Array.isArray(response.data)) {
+          const productId = Number(id)
+          const raw = response.data.find(p => p.id === productId || p.id?.toString() === id)
+          if (raw) {
+            const mapped = mapProduct(raw)
+            setProduct(mapped)
+            // Check if product is already in wishlist
+            const existingWishlist = JSON.parse(localStorage.getItem('wishlist')) || []
+            const exists = existingWishlist.find(item => item.id === mapped.id)
+            setIsInWishlist(!!exists)
+          } else {
+            navigate('/products')
+          }
+        } else {
+          navigate('/products')
+        }
+      } catch (error) {
+        console.error('Failed to load product details:', error)
         navigate('/products')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
-    }, 300)
+    }
+
+    loadProduct()
   }, [id, navigate])
 
   if (loading) {
@@ -259,9 +310,9 @@ function ProductPage() {
 
               {/* Thumbnail Gallery (Optional) */}
               <div className="grid grid-cols-4 gap-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="aspect-square rounded-lg overflow-hidden bg-slate-100 border-2 border-slate-200 cursor-pointer hover:border-primary transition-colors">
-                    <img src={product.image} alt={`View ${i}`} className="w-full h-full object-cover" />
+                {(product.images && product.images.length ? product.images : [product.image]).slice(0, 4).map((img, i) => (
+                  <div key={`${img}-${i}`} className="aspect-square rounded-lg overflow-hidden bg-slate-100 border-2 border-slate-200 cursor-pointer hover:border-primary transition-colors">
+                    <img src={img} alt={`View ${i + 1}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
@@ -411,7 +462,9 @@ function ProductPage() {
                 <span className="material-symbols-outlined text-amber-600 text-[20px]">info</span>
                 <div>
                   <p className="text-sm font-semibold text-amber-900 mb-1">Security Deposit Required</p>
-                  <p className="text-xs text-amber-800">A refundable security deposit of ₹5,000 will be collected at pickup.</p>
+                  <p className="text-xs text-amber-800">
+                    A refundable security deposit of ₹{(product.securityDeposit || 0).toLocaleString()} will be collected at pickup.
+                  </p>
                 </div>
               </div>
             </div>
