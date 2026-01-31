@@ -15,6 +15,11 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PaymentPage from './pages/PaymentPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import TermsPage from './pages/TermsPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
+import WishlistPage from './pages/WishlistPage'
+import OrdersPage from './pages/OrdersPage'
 
 function App() {
   return (
@@ -23,7 +28,7 @@ function App() {
       <Route path="/vendor/*" element={<VendorRoutes />} />
       
       {/* Customer Routes */}
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/vendor-signup" element={<VendorSignup />} />
@@ -36,6 +41,11 @@ function App() {
       <Route path="/checkout" element={<CheckoutPage />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/wishlist" element={<WishlistPage />} />
+      <Route path="/orders" element={<OrdersPage />} />
     </Routes>
   )
 }
