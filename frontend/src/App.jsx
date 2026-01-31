@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import VendorSignup from './pages/VendorSignup'
+import AdminDashboard from './pages/AdminDashboard';
 import './App.css'
 import ProductPage from './pages/ProductPage'
 import Profile from './pages/Profile'
@@ -28,6 +29,7 @@ function App() {
       <Route path="/products" element={<ProductsPage />} />
       <Route path="/product/:id" element={<ProductPage />} />
       <Route path="/cart" element={<CartPage />} />
+      <Route path="/admin" element={<AdminDashboard />} />
     </Routes>
   )
 }

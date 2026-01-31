@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,40 +9,47 @@ const Login = () => {
 
   const API_BASE_URL = 'http://localhost:3000/api/auth'; 
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+const handleChange = (e) => {
+  setFormData({ ...formData, [e.target.name]: e.target.value });
+};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
+  try {
+    const response = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/login`, formData);
+    const data = await response.json();
 
-      if (response.data && response.data.token) {
-        // Save token and user info
-        localStorage.setItem('token', response.data.token);
+    if (response.ok) {
+      // 1. Save Token
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      alert(`Welcome back, ${data.user.firstName}!`);
 
-        const profileOverrides = JSON.parse(localStorage.getItem('profileOverrides')) || {};
-        const userEmail = response.data.user?.email;
-        const emailKey = userEmail ? userEmail.trim().toLowerCase() : null;
-        const mergedUser = emailKey && profileOverrides[emailKey]
-          ? { ...response.data.user, ...profileOverrides[emailKey] }
-          : response.data.user;
-
-        localStorage.setItem('user', JSON.stringify(mergedUser));
-
-        // Redirect to Home
-        navigate('/');
+      // 2. ✅ CHECK ROLE & REDIRECT CORRECTLY
+      if (data.user.role === 'ADMIN') {
+        navigate('/admin'); // Go to Dashboard
+      } else {
+        navigate('/');      // Go to Home
       }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
+
+    } else {
+      setError(data.error || 'Login failed');
     }
-  };
+  } catch (error) {
+    console.error("Error:", error);
+    setError('An error occurred during login');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 hero-gradient font-display antialiased text-[#0d131c]">
