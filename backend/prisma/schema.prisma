@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -13,8 +9,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// 1. Define Roles
+enum Role {
+  CUSTOMER
+  VENDOR
+  ADMIN
+}
+
+// 2. Updated User Model
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  name  String?
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  password        String   // Hashed password
+  firstName       String
+  lastName        String
+  role            Role     @default(CUSTOMER)
+  
+  // Vendor specific fields (Optional, only for vendors)
+  companyName     String?
+  gstin           String?
+  productCategory String?  // From your mockup dropdown
+  
+  createdAt       DateTime @default(now())
 }
