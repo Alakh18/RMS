@@ -174,6 +174,11 @@ function ProductPage() {
     }
 
     const orderData = {
+      productId: product.id,
+      name: product.name,
+      image: product.image,
+      category: product.category,
+      brand: product.brand,
       product,
       quantity,
       startDate,
@@ -338,12 +343,13 @@ function ProductPage() {
                 </p>
               </div>
 
-              <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-6 border border-primary/20">
+              {/* Pricing */}
+              <div className="bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 rounded-2xl p-6 border border-primary/20 dark:border-primary/30">
                 <div className="flex items-baseline gap-3 mb-4">
-                  <span className="text-4xl font-bold text-slate-900">
+                  <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">
                     ₹{getCurrentPrice()}
                   </span>
-                  <span className="text-lg text-slate-600">/ {selectedPeriod}</span>
+                  <span className="text-lg text-slate-600 dark:text-slate-400">/ {selectedPeriod}</span>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
@@ -354,7 +360,7 @@ function ProductPage() {
                       className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${
                         selectedPeriod === period
                           ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105'
-                          : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200'
+                          : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600'
                       }`}
                     >
                       Per {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -377,6 +383,7 @@ function ProductPage() {
                       type="datetime-local"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
+                      max={endDate || undefined}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
                   </div>
@@ -388,6 +395,7 @@ function ProductPage() {
                       type="datetime-local"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
+                      min={startDate || undefined}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
                   </div>
@@ -424,10 +432,10 @@ function ProductPage() {
               </div>
 
               {startDate && endDate && (
-                <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6">
+                <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl p-6">
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold text-slate-900">Estimated Total:</span>
-                    <span className="text-3xl font-bold text-green-600">
+                    <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">Estimated Total:</span>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">
                       ₹{calculateTotalPrice().toLocaleString()}
                     </span>
                   </div>

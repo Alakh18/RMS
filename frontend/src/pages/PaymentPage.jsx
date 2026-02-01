@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { getQuotationStatus, payOrder } from '../services/orderApi';
 
 // Use your specific Backend URL
 const API_BASE_URL = 'http://localhost:3000/api'; 
@@ -12,7 +13,9 @@ const PaymentPage = () => {
   const [user, setUser] = useState(null);
   const [address, setAddress] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
+  const [quotationStatus, setQuotationStatus] = useState(null);
+  const [quotationId, setQuotationId] = useState(null);
+  const [saveCard, setSaveCard] = useState(false);
 
   // 1. Load Razorpay Script Safely
   useEffect(() => {
@@ -20,7 +23,6 @@ const PaymentPage = () => {
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
-      script.onload = () => setIsRazorpayLoaded(true);
       script.onerror = () => console.error('Razorpay SDK failed to load');
       document.body.appendChild(script);
     };
@@ -77,32 +79,45 @@ const PaymentPage = () => {
     }
   }, [navigate]);
 
+  // 3. Load Quotation Status
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const res = await getQuotationStatus();
+        if (res?.data) {
+          setQuotationStatus(res.data.status);
+          setQuotationId(res.data.id);
+        } else {
+          setQuotationStatus(null);
+          setQuotationId(null);
+        }
+      } catch (err) {
+        console.error('Failed to load quotation status:', err);
+      }
+    };
+
+    loadStatus();
+  }, []);
+
   // Calculate Total
   const subTotal = cartItems.reduce((total, item) => {
-    // If totalPrice is pre-calculated in localCart (price * days * qty), use it directly.
-    // Otherwise, calculate: (price * quantity)
-    // We check item.priceAtBooking (DB) or item.product.price (Local)
     const price = Number(item.totalPrice || item.priceAtBooking || item.product?.price || 0);
     const qty = Number(item.quantity || 1);
-    
-    // If totalPrice exists, return that. Else calculate.
     return total + (item.totalPrice ? Number(item.totalPrice) : (price * qty));
   }, 0);
   
   const total = subTotal;
 
-  // 3. Handle Payment
-  const handlePayNow = async (e) => {
-    // [CRITICAL] PREVENT PAGE RELOAD
-    e.preventDefault(); 
-    
-    if (!isRazorpayLoaded) {
-      alert("Razorpay SDK is loading... please wait.");
+  // Handle Request Quotation
+  const handleRequestQuotation = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to submit quotation.');
+      navigate('/login');
       return;
     }
 
     setIsProcessing(true);
-    const token = localStorage.getItem('token');
 
     try {
       // [CRITICAL] Prepare Items for Backend
@@ -195,11 +210,53 @@ const PaymentPage = () => {
         alert("Payment Failed: " + response.error.description);
         setIsProcessing(false);
       });
-      rzp1.open();
+    rzp1.open();
 
     } catch (error) {
       console.error("Payment Error:", error);
       alert(error.message);
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayNow = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to place an order.');
+      navigate('/login');
+      return;
+    }
+
+    if (quotationStatus !== 'CONFIRMED') {
+      alert('Quotation not approved yet.');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const orderId = quotationId;
+      if (!orderId) throw new Error('No quotation found for payment');
+
+      const payRes = await payOrder(orderId);
+      const orderNumber = payRes?.orderNumber || `ORD-${orderId}`;
+
+      const orderData = {
+        orderItems: cartItems,
+        total,
+        subTotal,
+        address,
+        orderId: orderNumber,
+      };
+
+      localStorage.removeItem('cart');
+      window.dispatchEvent(new Event('storage'));
+
+      navigate('/order-confirmation', { state: orderData });
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Payment failed. Please try again.');
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -233,6 +290,101 @@ const PaymentPage = () => {
                </p>
             </div>
 
+            {/* Quotation Status */}
+            <div className="glass-panel p-6 rounded-3xl border border-white/50">
+              <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">request_quote</span>
+                Quotation Status
+              </h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`px-4 py-2 rounded-xl text-sm font-bold border ${
+                  quotationStatus === 'CONFIRMED'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : quotationStatus === 'SENT'
+                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    : quotationStatus === 'CANCELLED'
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}>
+                  {quotationStatus === 'CONFIRMED'
+                    ? 'APPROVED'
+                    : quotationStatus === 'SENT'
+                    ? 'PENDING'
+                    : quotationStatus === 'CANCELLED'
+                    ? 'REJECTED'
+                    : 'NOT SUBMITTED'}
+                </span>
+                {quotationStatus !== 'CONFIRMED' && (
+                  <button
+                    onClick={handleRequestQuotation}
+                    disabled={isProcessing}
+                    className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60"
+                  >
+                    Request Quotation
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-slate-600 mt-3">
+                You can pay only after the vendor approves your quotation.
+              </p>
+            </div>
+
+            {/* 1. Credit Card Form */}
+            <div className="glass-panel p-8 rounded-3xl border border-white/50 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+              
+              <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">credit_card</span>
+                Card Details
+              </h3>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Card Number</label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      placeholder="0000 0000 0000 0000" 
+                      maxLength="19"
+                      className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl font-mono text-lg text-slate-700 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all placeholder:text-slate-300"
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
+                       <div className="h-5 w-8 bg-slate-100 rounded border border-slate-200"></div>
+                       <div className="h-5 w-8 bg-slate-100 rounded border border-slate-200"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Expiry Date</label>
+                      <input 
+                        type="text" 
+                        placeholder="MM / YY" 
+                        className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">CVC</label>
+                      <input 
+                        type="password" 
+                        placeholder="123" 
+                        maxLength="3"
+                        className="w-full px-5 py-4 bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      />
+                   </div>
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${saveCard ? 'bg-primary border-primary' : 'border-slate-300 bg-white'}`}>
+                    {saveCard && <span className="material-symbols-outlined text-white text-[14px]">check</span>}
+                  </div>
+                  <input type="checkbox" className="hidden" checked={saveCard} onChange={() => setSaveCard(!saveCard)} />
+                  <span className="text-sm font-semibold text-slate-600 group-hover:text-primary transition-colors">Save my payment details for future purchases</span>
+                </label>
+              </div>
+            </div>
+
             {/* Razorpay Banner */}
             <div className="glass-panel p-6 rounded-2xl border border-blue-200 bg-blue-50/50">
               <div className="flex items-center gap-4">
@@ -264,12 +416,19 @@ const PaymentPage = () => {
 
               {/* PAY NOW BUTTON */}
               <button 
-                type="button" // <--- CRITICAL: Prevents Form Submission/Reload
+                type="button" 
                 onClick={handlePayNow}
-                disabled={isProcessing || !isRazorpayLoaded}
-                className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all mb-6 flex items-center justify-center gap-2 shadow-lg hover:shadow-slate-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                disabled={isProcessing || quotationStatus !== 'CONFIRMED'}
+                className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all mb-6 flex items-center justify-center gap-2 shadow-lg hover:shadow-slate-900/20 disabled:opacity-70 disabled:cursor-not-allowed group"
               >
-                {isProcessing ? "Processing..." : "Pay Now"}
+                {isProcessing ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    {quotationStatus === 'CONFIRMED' ? 'Pay Now' : 'Awaiting Approval'}
+                    <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  </>
+                )}
               </button>
 
               <div className="text-center">
