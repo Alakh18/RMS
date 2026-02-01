@@ -41,6 +41,9 @@ app.use('/api/orders', orderRoutes);
 // This maps to routes/vendor/index.js, which handles /quotations, /products, etc.
 app.use('/api/vendor', vendorRoutes); 
 
+// Public product listing
+app.use('/api/products', productRoutes);
+
 // Admin Routes (User Management, Reports)
 app.use('/api/admin', adminRoutes);
 
