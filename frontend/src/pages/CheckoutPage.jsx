@@ -56,15 +56,15 @@ const CheckoutPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background-light font-display text-[#0d131c]">
+    <div className="min-h-screen bg-background-light dark:bg-slate-900 font-display text-[#0d131c] dark:text-slate-100">
       <Navbar />
 
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
         
         {/* Breadcrumb */}
-        <div className="mb-8 text-sm font-medium text-slate-500 flex items-center gap-2">
+        <div className="mb-8 text-sm font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
           <Link to="/cart" className="hover:text-primary transition-colors">Cart</Link>
-          <span className="text-slate-300">/</span>
+          <span className="text-slate-300 dark:text-slate-600">/</span>
           <span className="text-primary font-bold">Checkout</span>
         </div>
 
@@ -74,8 +74,8 @@ const CheckoutPage = () => {
           <div className="lg:col-span-2 space-y-8">
             
             {/* 1. Delivery Method */}
-            <div className="glass-panel p-6 rounded-3xl border border-white/50">
-              <h2 className="text-xl font-bold text-slate-900 mb-5 flex items-center gap-2">
+            <div className="glass-panel dark:bg-slate-800 p-6 rounded-3xl border border-white/50 dark:border-slate-700">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">local_shipping</span>
                 Delivery Method
               </h2>
@@ -83,8 +83,8 @@ const CheckoutPage = () => {
                 <label 
                   className={`flex items-center justify-between p-5 rounded-2xl border-2 cursor-pointer transition-all ${
                     deliveryMethod === 'standard' 
-                      ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
-                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                      ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-lg' 
+                      : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -105,8 +105,8 @@ const CheckoutPage = () => {
                 <label 
                   className={`flex items-center justify-between p-5 rounded-2xl border-2 cursor-pointer transition-all ${
                     deliveryMethod === 'pickup' 
-                      ? 'bg-slate-900 border-slate-900 text-white shadow-lg' 
-                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                      ? 'bg-slate-900 dark:bg-slate-700 border-slate-900 dark:border-slate-600 text-white shadow-lg' 
+                      : 'bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -127,21 +127,21 @@ const CheckoutPage = () => {
             </div>
 
             {/* 2. Delivery Address Logic */}
-            <div className="glass-panel p-6 rounded-3xl border border-white/50">
-              <h2 className="text-xl font-bold text-slate-900 mb-5 flex items-center gap-2">
+            <div className="glass-panel dark:bg-slate-800 p-6 rounded-3xl border border-white/50 dark:border-slate-700">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">location_on</span>
                 Delivery Address
               </h2>
 
               {/* CASE A: Saved Address Exists -> Show "Use Default" Card */}
               {!showAddressForm && savedAddress && (
-                <div className="bg-slate-900 text-white p-6 rounded-2xl relative shadow-xl overflow-hidden group animate-in fade-in slide-in-from-bottom-2">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -z-0"></div>
+                <div className="bg-slate-900 dark:bg-slate-700 text-white p-6 rounded-2xl relative shadow-xl overflow-hidden group animate-in fade-in slide-in-from-bottom-2">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 dark:bg-primary/30 rounded-full blur-3xl -z-0"></div>
                   
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="text-2xl font-bold">{user ? `${user.firstName} ${user.lastName}` : 'Guest User'}</h3>
-                      <span className="px-3 py-1 bg-primary/20 border border-primary/30 text-primary text-xs font-bold rounded-lg uppercase tracking-wider">
+                      <span className="px-3 py-1 bg-primary/20 dark:bg-primary/30 border border-primary/30 dark:border-primary/50 text-primary dark:text-blue-400 text-xs font-bold rounded-lg uppercase tracking-wider">
                         Default Address
                       </span>
                     </div>
@@ -166,7 +166,7 @@ const CheckoutPage = () => {
               {showAddressForm && (
                 <form onSubmit={handleSaveAddress} className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Street Address</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Street Address</label>
                     <input 
                       name="street"
                       required
@@ -174,13 +174,13 @@ const CheckoutPage = () => {
                       onChange={handleAddressChange}
                       type="text" 
                       placeholder="123, Tech Park Road..."
-                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
+                      className="w-full px-5 py-3.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">City</label>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">City</label>
                       <input 
                         name="city"
                         required
@@ -188,11 +188,11 @@ const CheckoutPage = () => {
                         onChange={handleAddressChange}
                         type="text" 
                         placeholder="Gurugram"
-                        className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
+                        className="w-full px-5 py-3.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Zip Code</label>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Zip Code</label>
                       <input 
                         name="zip"
                         required
@@ -200,18 +200,18 @@ const CheckoutPage = () => {
                         onChange={handleAddressChange}
                         type="text" 
                         placeholder="122003"
-                        className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
+                        className="w-full px-5 py-3.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" 
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Country</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Country</label>
                     <select 
                       name="country"
                       value={addressFormData.country}
                       onChange={handleAddressChange}
-                      className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
+                      className="w-full px-5 py-3.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none"
                     >
                       <option>India</option>
                       <option>USA</option>
@@ -230,7 +230,7 @@ const CheckoutPage = () => {
                       <button 
                         type="button"
                         onClick={() => setShowAddressForm(false)}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-6 py-3 rounded-xl transition-all"
+                        className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-200 font-bold px-6 py-3 rounded-xl transition-all"
                       >
                         Cancel
                       </button>
@@ -252,7 +252,7 @@ const CheckoutPage = () => {
               <div className="space-y-4 mb-8 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {cartItems.map((item, idx) => (
                   <div key={idx} className="flex gap-4 items-center">
-                    <div className="w-12 h-12 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shrink-0">
+                    <div className="w-12 h-12 bg-slate-800 dark:bg-slate-600 rounded-lg border border-slate-700 dark:border-slate-500 overflow-hidden shrink-0">
                       <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover opacity-80" />
                     </div>
                     <div className="flex-1 min-w-0">

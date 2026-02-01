@@ -39,7 +39,7 @@ function Footer() {
             <div className="size-10 bg-gradient-to-br from-primary via-primary to-accent rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-primary/50 group-hover:scale-110 transition-all duration-300">
               <span className="material-symbols-outlined text-[24px]">hexagon</span>
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">RentalEco</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-[#0d131c] to-primary dark:from-slate-100 dark:to-blue-400 bg-clip-text text-transparent">RentalEco</span>
           </div>
           <p className="text-sm leading-relaxed mb-6 text-slate-400 max-w-md">
             Empowering businesses and creators with the world&apos;s most flexible and innovative asset rental ecosystem. Join thousands of satisfied customers.

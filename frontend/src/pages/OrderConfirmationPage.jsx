@@ -30,7 +30,7 @@ const OrderConfirmationPage = () => {
   if (!orderItems) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 font-display text-[#0d131c]">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-display text-[#0d131c] dark:text-slate-100">
       {/* Hide Navbar during print */}
       <div className="print:hidden">
         <Navbar />
@@ -98,20 +98,20 @@ const OrderConfirmationPage = () => {
         {/* Web-Only Header & Buttons */}
         <div className="flex justify-between items-center gap-4 mb-6 print:hidden">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Order Confirmation</h1>
-            <p className="text-slate-500 text-sm mt-1">Your rental order has been placed successfully</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Order Confirmation</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Your rental order has been placed successfully</p>
           </div>
           <div className="flex gap-3">
             <button 
               onClick={handleDownload}
-              className="px-5 py-2.5 bg-white border-2 border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2"
+              className="px-5 py-2.5 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">download</span>
               Download PDF
             </button>
             <button 
               onClick={handlePrint}
-              className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-black transition-all flex items-center gap-2"
+              className="px-5 py-2.5 bg-slate-900 dark:bg-slate-700 text-white font-bold rounded-lg hover:bg-black dark:hover:bg-slate-600 transition-all flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-[18px]">print</span>
               Print Invoice
@@ -131,7 +131,7 @@ const OrderConfirmationPage = () => {
         </div>
 
         {/* --- INVOICE CONTAINER (Print Target) --- */}
-        <div className="print-container bg-white rounded-xl shadow-lg border border-slate-200 p-8 sm:p-10">
+        <div className="print-container bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 sm:p-10">
           
           {/* Invoice Header */}
           <div className="flex justify-between items-start border-b-2 border-slate-900 pb-8 mb-8">
@@ -276,13 +276,13 @@ const OrderConfirmationPage = () => {
         <div className="flex flex-col sm:flex-row gap-4 mt-8 print:hidden">
           <Link 
             to="/products" 
-            className="flex-1 px-8 py-4 bg-white border-2 border-slate-300 text-slate-900 font-bold rounded-xl hover:bg-slate-50 transition-all text-center"
+            className="flex-1 px-8 py-4 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all text-center"
           >
             Continue Shopping
           </Link>
           <Link 
             to="/profile" 
-            className="flex-1 px-8 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-black transition-all text-center"
+            className="flex-1 px-8 py-4 bg-slate-900 dark:bg-slate-700 text-white font-bold rounded-xl hover:bg-black dark:hover:bg-slate-600 transition-all text-center"
           >
             View My Orders
           </Link>

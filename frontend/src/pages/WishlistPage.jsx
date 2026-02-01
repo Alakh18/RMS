@@ -104,27 +104,27 @@ const WishlistPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background-light text-[#0d131c] font-display antialiased">
+    <div className="min-h-screen bg-background-light dark:bg-slate-900 text-[#0d131c] dark:text-slate-100 font-display antialiased">
       <Navbar />
 
       {/* Header Section */}
-      <section className="relative pt-32 pb-12 px-6 hero-gradient overflow-hidden">
-        <div className="absolute top-1/4 left-10 w-64 h-64 bg-red-500/10 rounded-full blur-3xl -z-10 animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl -z-10"></div>
+      <section className="relative pt-32 pb-12 px-6 hero-gradient dark:bg-slate-900 overflow-hidden">
+        <div className="absolute top-1/4 left-10 w-64 h-64 bg-red-500/10 dark:bg-red-500/20 rounded-full blur-3xl -z-10 animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-pink-500/10 dark:bg-pink-500/20 rounded-full blur-3xl -z-10"></div>
         
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-slate-200 shadow-sm mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-sm mb-4">
                 <span className="text-red-500 text-xl">❤️</span>
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
                   Your Favorites
                 </span>
               </div>
-              <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-3">
+              <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-slate-100 mb-3">
                 My <span className="text-gradient bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent">Wishlist</span>
               </h1>
-              <p className="text-lg text-slate-600">
+              <p className="text-lg text-slate-600 dark:text-slate-400">
                 {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} saved for later
               </p>
             </div>
@@ -133,7 +133,7 @@ const WishlistPage = () => {
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={clearWishlist}
-                  className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-red-500 hover:text-red-500 transition-all flex items-center gap-2"
+                  className="px-6 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-red-500 hover:text-red-500 transition-all flex items-center gap-2"
                 >
                   <span className="material-symbols-outlined text-[20px]">delete_sweep</span>
                   Clear All
@@ -155,12 +155,12 @@ const WishlistPage = () => {
         <div className="max-w-7xl mx-auto">
           {wishlistItems.length === 0 ? (
             // Empty State
-            <div className="glass-panel p-16 rounded-3xl text-center border border-white/40 shadow-xl">
-              <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="glass-panel dark:bg-slate-800 p-16 rounded-3xl text-center border border-white/40 dark:border-slate-700 shadow-xl">
+              <div className="w-24 h-24 bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-5xl">💔</span>
               </div>
-              <h2 className="text-3xl font-black text-slate-900 mb-4">Your Wishlist is Empty</h2>
-              <p className="text-lg text-slate-600 mb-8 max-w-md mx-auto">
+              <h2 className="text-3xl font-black text-slate-900 dark:text-slate-100 mb-4">Your Wishlist is Empty</h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
                 Start adding your favorite products to save them for later and never miss out on great deals!
               </p>
               <Link 
@@ -174,11 +174,11 @@ const WishlistPage = () => {
           ) : (
             <>
               {/* Period Selector */}
-              <div className="mb-8 glass-panel p-6 rounded-2xl border border-white/40 shadow-lg">
+              <div className="mb-8 glass-panel dark:bg-slate-800 p-6 rounded-2xl border border-white/40 dark:border-slate-700 shadow-lg">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-1">View Pricing For</h3>
-                    <p className="text-sm text-slate-600">Select your preferred rental period</p>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">View Pricing For</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Select your preferred rental period</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {['hour', 'day', 'week', 'month'].map((period) => (
@@ -188,7 +188,7 @@ const WishlistPage = () => {
                         className={`px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${
                           selectedPeriod === period
                             ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 scale-105'
-                            : 'bg-white text-slate-700 hover:bg-slate-50 border-2 border-slate-200 hover:border-primary'
+                            : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 border-2 border-slate-200 dark:border-slate-600 hover:border-primary'
                         }`}
                       >
                         Per {period.charAt(0).toUpperCase() + period.slice(1)}
@@ -201,10 +201,10 @@ const WishlistPage = () => {
               {/* Wishlist Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {wishlistItems.map((product) => (
-                  <div key={product.id} className="group glass-panel rounded-2xl border border-white/40 overflow-hidden hover:shadow-2xl hover:border-red-300 transition-all duration-300 flex flex-col">
+                  <div key={product.id} className="group glass-panel dark:bg-slate-800 rounded-2xl border border-white/40 dark:border-slate-700 overflow-hidden hover:shadow-2xl hover:border-red-300 dark:hover:border-red-500 transition-all duration-300 flex flex-col">
                     
                     {/* Image Area */}
-                    <Link to={`/product/${product.id}`} className="relative aspect-[4/3] bg-slate-100 overflow-hidden block">
+                    <Link to={`/product/${product.id}`} className="relative aspect-[4/3] bg-slate-100 dark:bg-slate-700 overflow-hidden block">
                       <img 
                         src={product.image} 
                         alt={product.name} 
@@ -240,28 +240,28 @@ const WishlistPage = () => {
                     <div className="p-5 flex flex-col flex-1">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded">
+                          <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded">
                             {product.category}
                           </span>
                           {product.rating && (
                             <div className="flex items-center gap-1 text-amber-500">
                               <span className="material-symbols-outlined text-[14px] filled">star</span>
-                              <span className="text-xs font-bold text-slate-900">{product.rating}</span>
+                              <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{product.rating}</span>
                             </div>
                           )}
                         </div>
-                        <h3 className="font-bold text-slate-900 mb-2 line-clamp-2 text-lg group-hover:text-primary transition-colors">
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-2 line-clamp-2 text-lg group-hover:text-primary transition-colors">
                           {product.name}
                         </h3>
-                        <p className="text-sm text-slate-600 line-clamp-2 mb-3">{product.description}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">{product.description}</p>
                       </div>
                       
                       {/* Price */}
-                      <div className="mb-4 p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/20">
-                        <p className="text-xs text-slate-500 mb-1">Starting from</p>
-                        <p className="text-3xl font-black text-slate-900">
+                      <div className="mb-4 p-4 bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 rounded-xl border border-primary/20 dark:border-primary/30">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Starting from</p>
+                        <p className="text-3xl font-black text-slate-900 dark:text-slate-100">
                           ₹{getCurrentPrice(product).toLocaleString()}
-                          <span className="text-sm text-slate-500 font-normal">/{selectedPeriod}</span>
+                          <span className="text-sm text-slate-500 dark:text-slate-400 font-normal">/{selectedPeriod}</span>
                         </p>
                       </div>
                       
@@ -276,7 +276,7 @@ const WishlistPage = () => {
                         </button>
                         <Link 
                           to={`/product/${product.id}`}
-                          className="px-4 py-3 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-primary transition-all flex items-center justify-center gap-1 text-sm"
+                          className="px-4 py-3 bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 hover:border-primary transition-all flex items-center justify-center gap-1 text-sm"
                         >
                           <span className="material-symbols-outlined text-[16px]">visibility</span>
                           View
@@ -288,11 +288,11 @@ const WishlistPage = () => {
               </div>
 
               {/* Summary Card */}
-              <div className="mt-12 glass-panel p-8 rounded-3xl border border-white/40 shadow-xl">
+              <div className="mt-12 glass-panel dark:bg-slate-800 p-8 rounded-3xl border border-white/40 dark:border-slate-700 shadow-xl">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 mb-2">Ready to rent?</h3>
-                    <p className="text-slate-600">
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Ready to rent?</h3>
+                    <p className="text-slate-600 dark:text-slate-400">
                       You have <strong className="text-primary">{wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'}</strong> in your wishlist
                     </p>
                   </div>
@@ -306,7 +306,7 @@ const WishlistPage = () => {
                     </Link>
                     <Link
                       to="/products"
-                      className="px-8 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-primary transition-all flex items-center gap-2"
+                      className="px-8 py-4 bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 hover:border-primary transition-all flex items-center gap-2"
                     >
                       <span className="material-symbols-outlined">store</span>
                       Continue Shopping
