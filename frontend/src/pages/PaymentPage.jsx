@@ -152,7 +152,7 @@ const PaymentPage = () => {
 
       // STEP 2: Open Razorpay
       const options = {
-        key: "rzp_test_SAdeEvv7rFnS2e", // <--- REPLACE THIS WITH YOUR KEY
+        key: "rzp_test_SAdeEvv7rFnS2e",
         amount: data.amount,
         currency: data.currency,
         name: "RentalEco",
