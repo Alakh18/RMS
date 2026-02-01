@@ -36,7 +36,10 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
+    const fetchData = async () => {
+      await fetchUsers();
+    };
+    fetchData();
   }, [page, search]);
 
   return (

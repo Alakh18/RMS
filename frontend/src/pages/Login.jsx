@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,9 +9,9 @@ const Login = () => {
 
   const API_BASE_URL = 'http://localhost:3000/api/auth'; 
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+const handleChange = (e) => {
+  setFormData({ ...formData, [e.target.name]: e.target.value });
+};
 
   // src/pages/Login.jsx
 
@@ -20,6 +19,8 @@ const Login = () => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+  setLoading(true);
+  setError('');
   try {
     const response = await fetch('http://localhost:3000/api/auth/login', {
       method: 'POST',
@@ -48,10 +49,13 @@ const handleSubmit = async (e) => {
       }
 
     } else {
-      alert(data.error);
+      setError(data.error || 'Login failed');
     }
   } catch (error) {
     console.error("Error:", error);
+    setError('An error occurred during login');
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -90,13 +94,13 @@ const handleSubmit = async (e) => {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between ml-1">
-                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                  Password
-                </label>
-                 <a href="#" className="text-sm font-bold text-primary hover:text-primary-dark transition-colors">
-                  Forgot Password?
-                 </a>
-            </div>
+              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                Password
+              </label>
+              <Link to="/forgot-password" size="sm" className="text-sm font-bold text-primary hover:text-primary-dark transition-colors">
+                Forgot Password?
+              </Link>
+              </div>
            <input
               name="password"
               onChange={handleChange}

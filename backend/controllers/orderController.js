@@ -1,5 +1,14 @@
-// src/controllers/orderController.js
-const prisma = require('../src/prisma');
+const { PrismaClient } = require('@prisma/client');
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+
+const prisma = new PrismaClient();
+
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 const recalcOrderTotals = async (tx, orderId) => {
   const items = await tx.orderItem.findMany({ where: { orderId } });
@@ -33,58 +42,49 @@ const recalcOrderTotals = async (tx, orderId) => {
 };
 
 // ==========================================
-// 1. ADD TO QUOTATION (Add to Cart)
+// 1. ADD TO CART (For single item adds)
 // ==========================================
 const addToCart = async (req, res) => {
   try {
     const { productId, quantity, startDate, endDate } = req.body;
-    const userId = req.user.userId; // Taken from authMiddleware
+    const userId = req.user.userId;
 
-    // 1. Basic Validation
     const start = new Date(startDate);
     const end = new Date(endDate);
-    if (start >= end) {
-      return res.status(400).json({ error: 'End date must be after start date' });
-    }
 
-    // 2. Find or Create a "DRAFT" Order (This is the Quotation)
+    // Find or Create Draft Order
     let order = await prisma.order.findFirst({
-      where: { 
-        customerId: userId, 
-        status: 'DRAFT' 
-      }
+      where: { customerId: userId, status: 'DRAFT' }
     });
 
-    // If no quotation exists, create a new one
     if (!order) {
       order = await prisma.order.create({
         data: {
           customerId: userId,
           status: 'DRAFT',
-          orderNumber: `QTN-${Date.now()}`, // QTN for Quotation
-          startDate: start, // Default to first item's dates
+          orderNumber: `QTN-${Date.now()}`,
+          startDate: start,
           endDate: end,
           totalAmount: 0,
         }
       });
     }
 
-    // 3. Get Product Details for Pricing
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    // Fetch Product & Calculate Price
+    const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    // 4. Calculate Price (Simple Logic: Price * Days * Qty)
     const oneDay = 24 * 60 * 60 * 1000;
-    const days = Math.round(Math.abs((end - start) / oneDay)) || 1; // Minimum 1 day
-    const priceAtBooking = product.price; 
-    
-    // 5. Add Item to the Quotation
+    const days = Math.max(1, Math.round(Math.abs((end - start) / oneDay)));
+    const price = Number(product.price);
+
+    // Add Item
     await prisma.orderItem.create({
       data: {
         orderId: order.id,
-        productId,
-        quantity,
-        priceAtBooking,
+        productId: product.id,
+        quantity: quantity,
+        priceAtBooking: price,
         startDate: start,
         endDate: end
       }
@@ -92,12 +92,11 @@ const addToCart = async (req, res) => {
 
     // Recalculate Order Total & Dates
     await recalcOrderTotals(prisma, order.id);
-
-    res.json({ message: 'Item added to quotation', orderId: order.id });
+    res.json({ message: 'Item added to cart', orderId: order.id });
 
   } catch (error) {
-    console.error("Add to cart error:", error);
-    res.status(500).json({ error: 'Failed to add item' });
+    console.error("Add to Cart Error:", error);
+    res.status(500).json({ error: 'Failed to add item to cart' });
   }
 };
 
@@ -141,109 +140,121 @@ const submitQuotation = async (req, res) => {
 // ==========================================
 // 2. CONFIRM ORDER (The "Double Booking" Check)
 // ==========================================
-const confirmOrder = async (req, res) => {
+const initiatePayment = async (req, res) => {
   try {
-    const { orderId } = req.body;
     const userId = req.user.userId;
+    const { items: frontendItems } = req.body; 
     let confirmedOrder = null;
 
-    // We use a Transaction ($transaction) to ensure that we check stock 
-    // AND confirm the order at the exact same millisecond.
-    await prisma.$transaction(async (tx) => {
-      
-      // 1. Fetch the Quotation (Draft Order)
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        include: { items: true } // Get all items to check them
-      });
-
-      if (!order) throw new Error('Order not found');
-      if (order.status !== 'DRAFT') throw new Error('Order is already confirmed');
-      if (order.customerId !== userId) throw new Error('Unauthorized');
-
-      // 2. CHECK INVENTORY FOR EVERY ITEM
-      for (const item of order.items) {
-        
-        // A. Find all CONFIRMED orders for this specific product
-        // that overlap with our requested dates.
-        const overlappingItems = await tx.orderItem.findMany({
-          where: {
-            productId: item.productId,
-            order: {
-              status: { in: ['CONFIRMED', 'PICKED_UP'] } // Only active rentals count
-            },
-            // THE OVERLAP FORMULA: (StartA < EndB) and (EndA > StartB)
-            AND: [
-              { startDate: { lt: item.endDate } }, 
-              { endDate: { gt: item.startDate } }
-            ]
-          }
-        });
-
-        // B. Calculate how many are currently reserved
-        const reservedQuantity = overlappingItems.reduce((sum, i) => sum + i.quantity, 0);
-
-        // C. Get Total Warehouse Stock
-        const product = await tx.product.findUnique({ where: { id: item.productId } });
-
-        // D. The Final Check
-        // If (Reserved + New Request) > Total Stock -> REJECT
-        if ((reservedQuantity + item.quantity) > product.quantity) {
-          throw new Error(`Product '${product.name}' is unavailable for these dates.`);
-        }
-      }
-
-      // 3. Recalculate totals and order dates before confirmation
-      await recalcOrderTotals(tx, orderId);
-
-      // 4. If the loop finishes, it means STOCK IS AVAILABLE.
-      // Update status to CONFIRMED (This reserves the stock)
-      const updatedOrder = await tx.order.update({
-        where: { id: orderId },
-        data: { 
-          status: 'CONFIRMED',
-          orderNumber: `ORD-${Date.now()}` // Change ID from QTN to ORD
-        }
-      });
-      confirmedOrder = updatedOrder;
-
-      // 5. Create Invoice and Payment record if not exists
-      const existingInvoice = await tx.invoice.findFirst({
-        where: { orderId: updatedOrder.id }
-      });
-
-      if (!existingInvoice) {
-        const invoice = await tx.invoice.create({
-          data: {
-            orderId: updatedOrder.id,
-            invoiceNumber: `INV-${Date.now()}`,
-            status: 'PAID',
-            totalAmount: updatedOrder.totalAmount,
-            paidAmount: updatedOrder.totalAmount,
-            balanceAmount: 0,
-            dueDate: new Date(),
-          }
-        });
-
-        await tx.payment.create({
-          data: {
-            invoiceId: invoice.id,
-            amount: updatedOrder.totalAmount,
-            method: 'CARD',
-            transactionId: `PAY-${Date.now()}`,
-          }
-        });
-      }
-      
-      // 4. (Optional) Create Invoice here automatically
-      // await tx.invoice.create({ ... })
+    // A. Check for existing DB Order
+    let order = await prisma.order.findFirst({
+      where: { customerId: userId, status: 'DRAFT' },
+      include: { items: true, customer: true }
     });
 
-    res.json({ success: true, message: 'Order Confirmed! Stock Reserved.', orderId, orderNumber: confirmedOrder?.orderNumber });
+    // B. If missing, create from Frontend Items
+    if (!order) {
+      if (!frontendItems || frontendItems.length === 0) {
+        return res.status(404).json({ error: "No items to checkout." });
+      }
+
+      console.log("Creating new DRAFT order for payment...");
+
+      let calculatedTotal = 0;
+      const orderItemsData = [];
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      for (const item of frontendItems) {
+        const pId = parseInt(item.productId || item.product?.id);
+        const product = await prisma.product.findUnique({ where: { id: pId } });
+        
+        if (product) {
+            const start = new Date(item.startDate);
+            const end = new Date(item.endDate);
+            const days = Math.max(1, Math.round(Math.abs((end - start) / oneDay)));
+            const price = Number(product.price);
+            
+            calculatedTotal += price * item.quantity * days;
+
+            orderItemsData.push({
+                productId: product.id,
+                quantity: item.quantity,
+                priceAtBooking: price,
+                startDate: start,
+                endDate: end
+            });
+        }
+      }
+
+      order = await prisma.order.create({
+        data: {
+          customerId: userId,
+          status: 'DRAFT',
+          orderNumber: `QTN-${Date.now()}`,
+          startDate: new Date(),
+          endDate: new Date(),
+          totalAmount: calculatedTotal,
+          items: { create: orderItemsData }
+        },
+        include: { items: true, customer: true }
+      });
+    }
+
+    // C. Create Razorpay Order
+    const amountInPaise = Math.round(Number(order.totalAmount) * 100);
+    const rzpOrder = await razorpay.orders.create({
+      amount: amountInPaise,
+      currency: "INR",
+      receipt: order.orderNumber,
+      notes: { customerId: userId, orderId: order.id }
+    });
+
+
+    res.json({
+      success: true,
+      rzpOrderId: rzpOrder.id,
+      amount: rzpOrder.amount,
+      currency: rzpOrder.currency,
+      dbOrderId: order.id,
+      customer: {
+        name: order.customer.firstName,
+        email: order.customer.email,
+        contact: ""
+      }
+    });
 
   } catch (error) {
-    console.error("Confirm Order Error:", error);
-    res.status(400).json({ error: error.message }); // Send specific error to frontend
+    console.error("Payment Init Error:", error);
+    res.status(500).json({ error: error.message || "Payment init failed" });
+  }
+};
+
+// ==========================================
+// 3. VERIFY PAYMENT
+// ==========================================
+const verifyOrder = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, dbOrderId } = req.body;
+    
+    // Verify Signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString()).digest("hex");
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ success: false, error: "Invalid Signature" });
+    }
+
+    // Confirm Order
+    await prisma.order.update({
+      where: { id: parseInt(dbOrderId) },
+      data: { status: 'CONFIRMED', orderNumber: `ORD-${Date.now()}` }
+    });
+
+    res.json({ success: true, orderId: dbOrderId });
+  } catch (error) {
+    console.error("Verify Error", error);
+    res.status(500).json({ error: "Verification failed" });
   }
 };
 
@@ -338,13 +349,24 @@ const getQuotationStatus = async (req, res) => {
 const getMyCart = async (req, res) => {
   try {
     const order = await prisma.order.findFirst({
-      where: { customerId: req.user.userId, status: 'DRAFT' },
-      include: { items: { include: { product: true } } }
+        where: { customerId: req.user.userId, status: 'DRAFT' },
+        include: { items: { include: { product: true } } }
     });
-    res.json(order || { items: [] });
+    // Return items array (or empty if no order)
+    res.json(order ? order.items : []);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching quotation' });
+    console.error("Get Cart Error:", error);
+    res.status(500).json({ error: "Failed to fetch cart" });
   }
 };
 
-module.exports = { addToCart, confirmOrder, getMyCart, submitQuotation, getQuotationStatus, payOrder };
+// [!] CRITICAL: EXPORT ALL FUNCTIONS
+module.exports = {
+  addToCart,
+  submitQuotation,
+  initiatePayment,
+  verifyOrder,
+  payOrder,
+  getQuotationStatus,
+  getMyCart
+};

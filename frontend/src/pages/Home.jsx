@@ -92,13 +92,7 @@ const Home = () => {
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMK7o-bUe188RuacID2HICnn49_KYiOEq6FcDj6iEXWg4Vs7MNqZ40h_CGUb9TlnZqlBsB4mRDldTnPTltz6p_UQDw1OfO48lNcRDixAVgvQXqzk7KE9KdKSnQEZqAUHz9PhyJU1gSA70whQ9lOKvUgOo1s9b0mKYk2qLhQR54sv8XRicxY_vZ22WchArbgTea5_pMoeZOY9YodRzQkYnpVOXaSpilCs69NmSWy7gM-HUd_xlBCDen2Fhatdfal7ZPaGgPGBJrvK3z"
           />
         </div>
-        <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center gap-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-              Live Inventory: 10,000+ Items
-            </span>
-          </div>
+          <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center gap-8">
           <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.1] text-gradient">
             Rent Anything,<br />Manage Everything.
           </h1>
@@ -106,68 +100,11 @@ const Home = () => {
             The all-in-one ecosystem for premium equipment and asset rentals. Experience the future of asset
             management today.
           </p>
-          <div className="w-full max-w-3xl mt-6 p-2 bg-white/80 backdrop-blur-xl border border-white/60 rounded-xl shadow-2xl flex flex-col md:flex-row gap-2 relative z-20">
-            <div className="flex-1 flex items-center px-4 py-3 bg-white/50 rounded-lg hover:bg-white transition-colors group focus-within:bg-white">
-              <span className="material-symbols-outlined text-slate-400 group-focus-within:text-primary mr-3">search</span>
-              <div className="flex flex-col flex-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">What to rent?</label>
-                <input
-                  className="bg-transparent border-none p-0 text-sm font-medium text-slate-900 placeholder-slate-400 focus:ring-0 w-full h-6"
-                  placeholder="Camera, Laptop, Drone..."
-                  type="text"
-                />
-              </div>
-            </div>
-            <div className="w-px bg-slate-200 my-2 hidden md:block"></div>
-            <div className="flex-1 flex items-center px-4 py-3 bg-white/50 rounded-lg hover:bg-white transition-colors group focus-within:bg-white">
-              <span className="material-symbols-outlined text-slate-400 group-focus-within:text-primary mr-3">calendar_month</span>
-              <div className="flex flex-col flex-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dates</label>
-                <input
-                  className="bg-transparent border-none p-0 text-sm font-medium text-slate-900 placeholder-slate-400 focus:ring-0 w-full h-6"
-                  placeholder="Add dates"
-                  type="text"
-                />
-              </div>
-            </div>
-            <button className="bg-primary hover:bg-primary-dark text-white rounded-lg px-8 py-3 font-bold shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 md:w-auto w-full">
-              <span className="material-symbols-outlined">search</span>
-              Search
-            </button>
-          </div>
+          {/* Search bar removed per request */}
         </div>
       </section>
 
-      {/* Trust Section */}
-      <section className="border-y border-slate-100 bg-white py-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex items-center gap-4 whitespace-nowrap">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-green-500 filled">verified_user</span>
-              <span className="text-sm font-bold text-slate-900">GST Invoice Available</span>
-            </div>
-            <div className="h-4 w-px bg-slate-300"></div>
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-blue-500 filled">security</span>
-              <span className="text-sm font-bold text-slate-900">Secure Deposits</span>
-            </div>
-          </div>
-          <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
-          <div className="flex flex-1 overflow-hidden relative mask-image-gradient">
-            <div className="flex gap-12 items-center animate-scroll whitespace-nowrap opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-              <span className="text-xl font-bold font-sans">NETFLIX</span>
-              <span className="text-xl font-bold font-serif italic">Spotify</span>
-              <span className="text-xl font-bold font-mono">WeWork</span>
-              <span className="text-xl font-bold tracking-widest">SONY</span>
-              <span className="text-xl font-bold font-sans">airbnb</span>
-              <span className="text-xl font-bold font-serif">uber</span>
-              <span className="text-xl font-bold font-sans">NETFLIX</span>
-              <span className="text-xl font-bold font-serif italic">Spotify</span>
-              <span className="text-xl font-bold font-mono">WeWork</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Trust section removed per request */}
 
       {/* How It Works */}
       <section className="py-24 bg-white">
@@ -468,33 +405,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Vendor Call to Action */}
-      <section className="bg-slate-900 mx-4 rounded-xl py-12 px-6 mb-4 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-bold text-white mb-4">Own Equipment? Start Earning.</h2>
-            <p className="text-slate-400 text-lg mb-6">
-              Join thousands of vendors monetizing their idle assets. We handle the bookings, payments, and insurance so you can focus on growing your inventory.
-            </p>
-            <div className="flex flex-wrap gap-4 text-sm text-slate-300 font-medium">
-              <span className="flex items-center gap-2"><span className="material-symbols-outlined text-green-500 text-lg">check_circle</span> Guaranteed Payouts</span>
-              <span className="flex items-center gap-2"><span className="material-symbols-outlined text-green-500 text-lg">check_circle</span> Verified Renters</span>
-              <span className="flex items-center gap-2"><span className="material-symbols-outlined text-green-500 text-lg">check_circle</span> Advanced Analytics</span>
-            </div>
-          </div>
-          <div className="flex gap-4">
-             <button className="bg-white text-slate-900 hover:bg-slate-100 font-bold px-8 py-3 rounded-full transition-all shadow-lg flex items-center gap-2">
-              Become a Vendor
-            </button>
-             <button className="bg-slate-800 text-white hover:bg-slate-700 font-bold px-8 py-3 rounded-full transition-all border border-slate-700">
-              Admin Login
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Footer Component */}
       <Footer />
     </div>

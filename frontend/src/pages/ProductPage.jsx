@@ -165,6 +165,14 @@ function ProductPage() {
   }
 
   const addToCartDirectly = () => {
+    // Check authentication before allowing cart addition
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to add items to your cart');
+      navigate('/login');
+      return;
+    }
+
     const orderData = {
       productId: product.id,
       name: product.name,
@@ -176,35 +184,33 @@ function ProductPage() {
       startDate,
       endDate,
       period: selectedPeriod,
-      // Ensure totalPrice is a number
       totalPrice: typeof calculateTotalPrice() === 'number' ? calculateTotalPrice() : 0, 
       selectedVariants: product.hasVariants ? selectedVariants : null
     }
     
-    // 1. Get existing cart
     const existingCart = JSON.parse(localStorage.getItem('cart')) || [];
-    
-    // 2. Add new item
     const updatedCart = [...existingCart, orderData];
-    
-    // 3. Save back to localStorage
     localStorage.setItem('cart', JSON.stringify(updatedCart));
     
     // 4. Force navbar update
     window.dispatchEvent(new Event('storage'));
-
-    console.log('Added to cart:', orderData);
-    // Navigate to cart instead of alert for better UX
     navigate('/cart'); 
   }
 
   const handleAddToCart = () => {
+    // Check authentication immediately when the user clicks "Add to Cart"
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to add items to your cart');
+      navigate('/login');
+      return;
+    }
+
     if (!startDate || !endDate) {
       alert('Please select rental period')
       return
     }
     
-    // If product has variants, open modal instead of adding directly
     if (product.hasVariants) {
       setShowVariantModal(true)
       return
@@ -261,7 +267,6 @@ function ProductPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-4">
         <nav className="flex items-center gap-2 text-sm text-slate-600">
           <a href="/" className="hover:text-primary transition-colors">Home</a>
@@ -272,12 +277,10 @@ function ProductPage() {
         </nav>
       </div>
 
-      {/* Product Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-10">
             
-            {/* Left: Product Image */}
             <div className="space-y-4">
               <div className="relative aspect-square rounded-2xl overflow-hidden bg-slate-100 border-2 border-slate-200 group">
                 <img 
@@ -313,7 +316,6 @@ function ProductPage() {
                 </div>
               </div>
 
-              {/* Thumbnail Gallery (Optional) */}
               <div className="grid grid-cols-4 gap-3">
                 {(product.images && product.images.length ? product.images : [product.image]).slice(0, 4).map((img, i) => (
                   <div key={`${img}-${i}`} className="aspect-square rounded-lg overflow-hidden bg-slate-100 border-2 border-slate-200 cursor-pointer hover:border-primary transition-colors">
@@ -323,9 +325,7 @@ function ProductPage() {
               </div>
             </div>
 
-            {/* Right: Product Details */}
             <div className="space-y-6">
-              {/* Product Header */}
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">
@@ -352,7 +352,6 @@ function ProductPage() {
                   <span className="text-lg text-slate-600 dark:text-slate-400">/ {selectedPeriod}</span>
                 </div>
                 
-                {/* Period Selector */}
                 <div className="flex flex-wrap gap-2">
                   {['hour', 'day', 'week', 'month'].map((period) => (
                     <button
@@ -370,7 +369,6 @@ function ProductPage() {
                 </div>
               </div>
 
-              {/* Rental Period */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">calendar_today</span>
@@ -402,13 +400,8 @@ function ProductPage() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">info</span>
-                  Timezone: UTC +01:00
-                </p>
               </div>
 
-              {/* Quantity Selector */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-slate-900">Quantity</h3>
                 <div className="flex items-center gap-4">
@@ -438,7 +431,6 @@ function ProductPage() {
                 </div>
               </div>
 
-              {/* Total Price Display */}
               {startDate && endDate && (
                 <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl p-6">
                   <div className="flex items-center justify-between">
@@ -450,7 +442,6 @@ function ProductPage() {
                 </div>
               )}
 
-              {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={handleAddToCart}
@@ -477,10 +468,8 @@ function ProductPage() {
             </div>
           </div>
 
-          {/* Product Details Tabs */}
           <div className="border-t border-slate-200 p-6 lg:p-10">
             <div className="space-y-6">
-              {/* Specifications */}
               <div>
                 <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">description</span>
@@ -496,7 +485,6 @@ function ProductPage() {
                 </div>
               </div>
 
-              {/* Terms & Conditions */}
               <div>
                 <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">gavel</span>
@@ -511,14 +499,6 @@ function ProductPage() {
                     <span className="material-symbols-outlined text-[18px] text-primary mt-0.5">arrow_right</span>
                     <span>Late return charges: ₹500 per day after rental period</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-primary mt-0.5">arrow_right</span>
-                    <span>Damage charges will be deducted from security deposit</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-primary mt-0.5">arrow_right</span>
-                    <span>Cancellation allowed up to 24 hours before rental starts</span>
-                  </li>
                 </ul>
               </div>
             </div>
@@ -526,11 +506,9 @@ function ProductPage() {
         </div>
       </div>
 
-      {/* Variant Selection Modal */}
       {showVariantModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
-            {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
               <h2 className="text-2xl font-bold text-slate-900">Configure Product</h2>
               <button
@@ -541,7 +519,6 @@ function ProductPage() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
               <div className="space-y-6">
                 {product.variants && product.variants.map((variant) => (
@@ -579,47 +556,14 @@ function ProductPage() {
                               )}
                             </div>
                           </div>
-                          {selectedVariants[variant.id] === index && (
-                            <span className="material-symbols-outlined text-primary text-[20px]">
-                              check_circle
-                            </span>
-                          )}
                         </label>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Price Summary */}
-              {Object.keys(selectedVariants).length > 0 && (
-                <div className="mt-6 p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/20">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-slate-600">Base Price:</span>
-                    <span className="text-sm font-semibold text-slate-900">
-                      ₹{product.dailyRate}/{selectedPeriod}
-                    </span>
-                  </div>
-                  {getVariantPrice() > 0 && (
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-600">Variants:</span>
-                      <span className="text-sm font-semibold text-green-600">
-                        +₹{getVariantPrice()}/{selectedPeriod}
-                      </span>
-                    </div>
-                  )}
-                  <div className="h-px bg-slate-200 my-2"></div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-bold text-slate-900">Total Price:</span>
-                    <span className="text-xl font-bold text-primary">
-                      ₹{getCurrentPrice()}/{selectedPeriod}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Modal Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
               <button
                 onClick={() => setShowVariantModal(false)}

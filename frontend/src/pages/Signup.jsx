@@ -21,14 +21,44 @@ const Signup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // New function to check password complexity based on your requirements
+  const validatePassword = (password) => {
+    // Condition: Length between 6 and 12 characters
+    if (password.length < 6 || password.length > 12) {
+      return "Password must be between 6 and 12 characters.";
+    }
+    // Condition: At least one uppercase letter
+    if (!/[A-Z]/.test(password)) {
+      return "Password must include at least one uppercase letter.";
+    }
+    // Condition: At least one lowercase letter
+    if (!/[a-z]/.test(password)) {
+      return "Password must include at least one lowercase letter.";
+    }
+    // Condition: At least one special character (@, $, &, _)
+    if (!/[@$&_]/.test(password)) {
+      return "Password must include at least one special character (@, $, &, _).";
+    }
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    // 1. Check if passwords match
     // Validation: Check passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Check password complexity
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setError(passwordError);
       setLoading(false);
       return;
     }
@@ -95,6 +125,9 @@ const Signup = () => {
           <div className="space-y-2">
             <label className="text-[11px] font-bold text-slate-700 ml-1 uppercase tracking-wider">Password</label>
             <input name="password" onChange={handleChange} type="password" className="w-full px-5 py-3 rounded-xl bg-white/60 border border-slate-200 text-slate-900 text-sm font-medium outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all" required />
+            <p className="text-[10px] text-slate-400 px-1">
+              Must be 6-12 chars, with 1 uppercase, 1 lowercase, and 1 special char (@, $, &, _).
+            </p>
           </div>
 
           <div className="space-y-2">

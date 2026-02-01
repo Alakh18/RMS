@@ -2,38 +2,84 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { addItemToCart, submitQuotation, getQuotationStatus, payOrder } from '../services/orderApi';
+import { getQuotationStatus, payOrder } from '../services/orderApi';
+
+// Use your specific Backend URL
+const API_BASE_URL = 'http://localhost:3000/api'; 
 
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [user, setUser] = useState(null);
   const [address, setAddress] = useState(null);
-  const [saveCard, setSaveCard] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [quotationStatus, setQuotationStatus] = useState(null);
   const [quotationId, setQuotationId] = useState(null);
+  const [saveCard, setSaveCard] = useState(false);
 
+  // 1. Load Razorpay Script Safely
   useEffect(() => {
-    const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-    if (storedCart.length === 0) {
-      navigate('/cart');
+    const loadRazorpay = () => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onerror = () => console.error('Razorpay SDK failed to load');
+      document.body.appendChild(script);
+    };
+    loadRazorpay();
+  }, []);
+
+  // 2. Load Cart & User Data
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    // Check Auth
+    if (!token) {
+      alert("Please login to continue.");
+      navigate('/login');
       return;
     }
-    setCartItems(storedCart);
 
+    // A. Load User
     const storedUser = JSON.parse(localStorage.getItem('user'));
     if (storedUser) {
       setUser(storedUser);
+      // Check Address
       if (storedUser.address) {
         setAddress(storedUser.address);
       } else {
         alert("Please provide a delivery address first.");
         navigate('/checkout');
+        return;
       }
+    }
+
+    // B. Load Cart (Prioritize LocalStorage to prevent redirect issues)
+    const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    if (localCart.length > 0) {
+      setCartItems(localCart);
+    } else {
+      // If local is empty, try DB (Fallback)
+      fetch(`${API_BASE_URL}/orders/cart`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const dbItems = Array.isArray(data) ? data : (data.items || []);
+        if (dbItems.length > 0) {
+          setCartItems(dbItems);
+        } else {
+          // Only redirect if BOTH are empty
+          alert("Your cart is empty.");
+          navigate('/cart');
+        }
+      })
+      .catch(err => console.error("Cart fetch error:", err));
     }
   }, [navigate]);
 
+  // 3. Load Quotation Status
   useEffect(() => {
     const loadStatus = async () => {
       try {
@@ -53,12 +99,16 @@ const PaymentPage = () => {
     loadStatus();
   }, []);
 
-  const subTotal = cartItems.reduce(
-    (total, item) => total + item.totalPrice * item.quantity,
-    0
-  );
+  // Calculate Total
+  const subTotal = cartItems.reduce((total, item) => {
+    const price = Number(item.totalPrice || item.priceAtBooking || item.product?.price || 0);
+    const qty = Number(item.quantity || 1);
+    return total + (item.totalPrice ? Number(item.totalPrice) : (price * qty));
+  }, 0);
+  
   const total = subTotal;
 
+  // Handle Request Quotation
   const handleRequestQuotation = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -70,33 +120,101 @@ const PaymentPage = () => {
     setIsProcessing(true);
 
     try {
-      let orderId = null;
+      // [CRITICAL] Prepare Items for Backend
+      // We send this so Backend can create the Order if it doesn't exist yet
+      const itemsPayload = cartItems.map(item => ({
+        productId: item.productId || item.product?.id,
+        quantity: item.quantity,
+        startDate: item.startDate || new Date(),
+        endDate: item.endDate || new Date()
+      }));
 
-      for (const item of cartItems) {
-        const productId = item.product?.id || item.productId;
-        if (!productId) continue;
+      console.log("Initiating Payment with items:", itemsPayload);
 
-        const response = await addItemToCart({
-          productId,
-          quantity: item.quantity,
-          startDate: item.startDate,
-          endDate: item.endDate,
-        });
+      // STEP 1: Create Order on Backend
+      const response = await fetch(`${API_BASE_URL}/orders/initiate`, {
+        method: 'POST',
+        headers: {
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${token}`
+        }, 
+        // [CRITICAL] SEND ITEMS IN BODY
+        body: JSON.stringify({ items: itemsPayload }) 
+      });
 
-        if (!orderId && response?.orderId) {
-          orderId = response.orderId;
-        }
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to initiate payment");
       }
 
-      if (!orderId) throw new Error('Unable to create quotation');
+      console.log("Order Created:", data);
 
-      const submitRes = await submitQuotation();
-      setQuotationStatus(submitRes?.status || 'SENT');
-      setQuotationId(submitRes?.orderId || orderId);
+      // STEP 2: Open Razorpay
+      const options = {
+        key: "rzp_test_SAdeEvv7rFnS2e", // <--- REPLACE THIS WITH YOUR KEY
+        amount: data.amount,
+        currency: data.currency,
+        name: "RentalEco",
+        description: "Equipment Rental",
+        order_id: data.rzpOrderId,
+        handler: async function (response) {
+          console.log("Payment Success. Verifying...");
+          
+          // STEP 3: Verify
+          try {
+            const verifyRes = await fetch(`${API_BASE_URL}/orders/verify`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                dbOrderId: data.dbOrderId
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success) {
+              alert("Payment Successful!");
+              localStorage.removeItem('cart'); 
+              window.dispatchEvent(new Event('storage'));
+              navigate('/order-confirmation', { state: { orderId: verifyData.orderId } });
+            } else {
+              alert("Verification Failed: " + verifyData.error);
+            }
+          } catch (error) {
+            console.error(error);
+            alert("Verification Error");
+          }
+        },
+        prefill: {
+          name: data.customer?.name || "",
+          email: data.customer?.email || "",
+          contact: ""
+        },
+        theme: { color: "#0d131c" },
+        modal: {
+          ondismiss: function() {
+            setIsProcessing(false);
+          }
+        }
+      };
+
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on('payment.failed', function (response){
+        alert("Payment Failed: " + response.error.description);
+        setIsProcessing(false);
+      });
+    rzp1.open();
+
     } catch (error) {
-      console.error('Quotation error:', error);
-      alert('Failed to submit quotation. Please try again.');
-    } finally {
+      console.error("Payment Error:", error);
+      alert(error.message);
       setIsProcessing(false);
     }
   };
@@ -149,7 +267,7 @@ const PaymentPage = () => {
 
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
         
-        {/* Breadcrumb Navigation */}
+        {/* Breadcrumb */}
         <div className="mb-8 text-sm font-medium text-slate-500 flex items-center gap-2">
           <Link to="/cart" className="hover:text-primary transition-colors">Cart</Link>
           <span className="text-slate-300">/</span>
@@ -160,9 +278,17 @@ const PaymentPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* LEFT COLUMN: Payment Forms */}
+          {/* Payment Info Column */}
           <div className="lg:col-span-2 space-y-8">
             <h2 className="text-2xl font-black text-slate-900">Payment Method</h2>
+            
+            {/* Address Summary */}
+            <div className="bg-slate-900 text-white p-6 rounded-2xl relative shadow-xl overflow-hidden">
+               <h3 className="text-xl font-bold mb-1">{user ? `${user.firstName} ${user.lastName}` : 'User'}</h3>
+               <p className="text-slate-300 text-sm mt-2">
+                 {address ? `${address.street}, ${address.city} - ${address.zip}` : "No Address"}
+               </p>
+            </div>
 
             {/* Quotation Status */}
             <div className="glass-panel p-6 rounded-3xl border border-white/50">
@@ -259,91 +385,27 @@ const PaymentPage = () => {
               </div>
             </div>
 
-            {/* 2. Delivery & Billing Summary */}
-            <div className="bg-slate-900 text-white p-6 rounded-2xl relative shadow-xl overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -z-0"></div>
-              
-              <div className="relative z-10 flex justify-between items-start">
+            {/* Razorpay Banner */}
+            <div className="glass-panel p-6 rounded-2xl border border-blue-200 bg-blue-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">R</div>
                 <div>
-                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-lg text-xs font-bold uppercase tracking-wider mb-3 backdrop-blur-md border border-white/10">
-                     <span className="material-symbols-outlined text-[14px]">local_shipping</span>
-                     Delivery & Billing
-                   </div>
-                   <h3 className="text-xl font-bold mb-1">{user ? `${user.firstName} ${user.lastName}` : 'Guest User'}</h3>
-                   <p className="text-slate-300 text-sm leading-relaxed max-w-md opacity-80 mt-2">
-                     {address ? (
-                       <>
-                         {address.street}<br/>
-                         {address.city} - {address.zip}<br/>
-                         {address.country}
-                       </>
-                     ) : (
-                       <span className="text-red-400">No address provided</span>
-                     )}
-                   </p>
+                  <h4 className="font-bold text-slate-900">Secure Payment via Razorpay</h4>
+                  <p className="text-xs text-slate-500">Redirecting to secure payment gateway...</p>
                 </div>
-                <button 
-                  onClick={() => navigate('/checkout')}
-                  className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-colors border border-white/10"
-                  title="Edit Address"
-                >
-                  <span className="material-symbols-outlined text-white text-[20px]">edit</span>
-                </button>
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Order Summary */}
+          {/* Order Summary Column */}
           <div className="lg:col-span-1">
             <div className="bg-white p-8 rounded-3xl sticky top-32 shadow-xl border border-slate-100">
-              
               <h3 className="text-lg font-bold text-slate-900 mb-6">Order Summary</h3>
-
-              {/* Product Preview (Primary Item) */}
-              <div className="mb-6 flex gap-4">
-                 <div className="w-16 h-16 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
-                    {cartItems.length > 0 && cartItems[0].product && (
-                      <img src={cartItems[0].product.image} alt="Product" className="w-full h-full object-cover" />
-                    )}
-                 </div>
-                 <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-500 font-bold uppercase mb-0.5">Primary Item</p>
-                    <h4 className="font-bold text-slate-900 text-sm line-clamp-1">
-                      {cartItems.length > 0 ? cartItems[0].product.name : 'No Items'}
-                    </h4>
-                    {cartItems.length > 1 && (
-                      <p className="text-xs font-bold text-primary mt-1">+{cartItems.length - 1} other items</p>
-                    )}
-                 </div>
-              </div>
-
-              <div className="h-px bg-slate-100 my-6"></div>
-
-              {/* Rental Period */}
-              <div className="mb-6">
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Rental Period</p>
-                {cartItems.length > 0 && (
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-sm font-medium text-slate-700 flex flex-col gap-1">
-                     <div className="flex justify-between">
-                        <span className="text-slate-500">Start:</span>
-                        <span>{new Date(cartItems[0].startDate).toLocaleDateString()}</span>
-                     </div>
-                     <div className="flex justify-between">
-                        <span className="text-slate-500">End:</span>
-                        <span>{new Date(cartItems[0].endDate).toLocaleDateString()}</span>
-                     </div>
-                  </div>
-                )}
-              </div>
-
+              
               <div className="space-y-3 mb-8">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Sub Total</span>
-                  <span className="text-slate-900 font-medium">₹{subTotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Delivery Charges</span>
-                  <span className="text-green-600 font-medium">Free</span>
+                  <span className="text-slate-500">Items</span>
+                  <span className="text-slate-900 font-medium">{cartItems.length}</span>
                 </div>
                 <div className="h-px bg-slate-100 my-2"></div>
                 <div className="flex justify-between text-lg font-black text-slate-900">
@@ -352,8 +414,9 @@ const PaymentPage = () => {
                 </div>
               </div>
 
-              {/* Pay Now Button */}
+              {/* PAY NOW BUTTON */}
               <button 
+                type="button" 
                 onClick={handlePayNow}
                 disabled={isProcessing || quotationStatus !== 'CONFIRMED'}
                 className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all mb-6 flex items-center justify-center gap-2 shadow-lg hover:shadow-slate-900/20 disabled:opacity-70 disabled:cursor-not-allowed group"
@@ -368,11 +431,8 @@ const PaymentPage = () => {
                 )}
               </button>
 
-              {/* Back Link */}
-              <div className="text-center flex items-center justify-center gap-3">
-                <span className="text-slate-300 text-xs uppercase font-bold tracking-wider">OR</span>
-                <Link to="/checkout" className="text-slate-500 text-sm font-bold hover:text-slate-900 transition-colors inline-flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <div className="text-center">
+                <Link to="/checkout" className="text-slate-500 text-sm font-bold hover:text-slate-900 transition-colors">
                   Back to Address
                 </Link>
               </div>
