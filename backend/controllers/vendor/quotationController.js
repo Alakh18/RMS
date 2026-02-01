@@ -7,39 +7,45 @@ const getVendorQuotations = async (req, res) => {
   try {
     const vendorId = req.user.userId;
 
-    // Find orders that contain this vendor's products AND are 'SENT'
-    // This allows vendors to see only relevant requests
+    const vendorProducts = await prisma.product.findMany({
+      where: { vendorId },
+      select: { id: true },
+    });
+
+    const vendorProductIds = vendorProducts.map(p => p.id);
+
+    if (!vendorProductIds.length) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
     const quotations = await prisma.order.findMany({
       where: {
-        status: 'SENT', 
+        status: { in: ['SENT', 'CONFIRMED', 'CANCELLED'] },
         items: {
-          some: {
-            product: { vendorId: vendorId }
-          }
+          some: { productId: { in: vendorProductIds } }
         }
       },
       include: {
-        customer: { 
-          select: { firstName: true, lastName: true, companyName: true, email: true } 
-        },
+        customer: { select: { id: true, firstName: true, lastName: true, email: true } },
         items: {
+          where: { productId: { in: vendorProductIds } },
           include: { product: true }
         }
       },
       orderBy: { updatedAt: 'desc' }
     });
 
-    // Format numbers for frontend
-    const formattedData = quotations.map(q => ({
-      ...q,
-      totalAmount: q.totalAmount.toString(),
-      items: q.items.map(i => ({
-        ...i,
-        priceAtBooking: i.priceAtBooking.toString()
-      }))
+    const transformed = quotations.map(q => ({
+      id: q.id,
+      orderNumber: q.orderNumber,
+      customer: q.customer ? `${q.customer.firstName} ${q.customer.lastName}` : 'Unknown',
+      amount: q.totalAmount.toString(),
+      status: q.status,
+      date: q.createdAt,
+      items: q.items,
     }));
 
-    res.status(200).json({ success: true, data: formattedData });
+    res.status(200).json({ success: true, data: transformed });
   } catch (error) {
     console.error('Get Quotations Error:', error);
     res.status(500).json({ error: 'Failed to fetch quotations' });
@@ -49,69 +55,31 @@ const getVendorQuotations = async (req, res) => {
 // 2. APPROVE QUOTATION (Locks the Stock)
 const approveQuotation = async (req, res) => {
   try {
+    const vendorId = req.user.userId;
     const { quotationId } = req.params;
     const orderId = parseInt(quotationId);
 
-    // USE TRANSACTION: Check Stock + Confirm Order atomically
-    await prisma.$transaction(async (tx) => {
-      
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        include: { items: true }
-      });
+    const vendorProducts = await prisma.product.findMany({
+      where: { vendorId },
+      select: { id: true }
+    });
+    const vendorProductIds = vendorProducts.map(p => p.id);
 
-      if (!order || order.status !== 'SENT') {
-        throw new Error('Invalid quotation status or order not found');
-      }
-
-      // --- INVENTORY CHECK LOGIC ---
-      for (const item of order.items) {
-        // Find overlapping ACTIVE rentals (Confirmed or Picked Up)
-        const overlappingItems = await tx.orderItem.findMany({
-          where: {
-            productId: item.productId,
-            order: { status: { in: ['CONFIRMED', 'PICKED_UP'] } }, 
-            AND: [
-              { startDate: { lt: item.endDate } },
-              { endDate: { gt: item.startDate } }
-            ]
-          }
-        });
-
-        const reservedQuantity = overlappingItems.reduce((sum, i) => sum + i.quantity, 0);
-        const product = await tx.product.findUnique({ where: { id: item.productId } });
-
-        // If (Reserved + New Request) > Total Stock -> FAIL
-        if ((reservedQuantity + item.quantity) > product.quantity) {
-          throw new Error(`Product '${product.name}' is unavailable for these dates.`);
-        }
-      }
-      // -----------------------------
-
-      // If check passes, Approve it!
-      await tx.order.update({
-        where: { id: orderId },
-        data: { 
-          status: 'CONFIRMED',
-          orderNumber: `ORD-${Date.now()}` // Convert QTN to ORD
-        }
-      });
-      
-      // Optional: Generate Invoice here
-      await tx.invoice.create({
-        data: {
-            invoiceNumber: `INV-${Date.now()}`,
-            orderId: order.id,
-            status: 'DRAFT',
-            totalAmount: order.totalAmount,
-            balanceAmount: order.totalAmount,
-            dueDate: new Date(new Date().setDate(new Date().getDate() + 7))
-        }
-      });
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(quotationId) },
+      include: { items: true }
     });
 
-    res.status(200).json({ success: true, message: 'Quotation Approved & Stock Reserved' });
+    if (!order) return res.status(404).json({ error: 'Quotation not found' });
+    const hasVendorItems = order.items.some(i => vendorProductIds.includes(i.productId));
+    if (!hasVendorItems) return res.status(403).json({ error: 'Unauthorized' });
 
+    const updated = await prisma.order.update({
+      where: { id: order.id },
+      data: { status: 'CONFIRMED', orderNumber: order.orderNumber || `QTN-${Date.now()}` }
+    });
+
+    res.status(200).json({ success: true, message: 'Quotation approved', data: { id: updated.id, status: updated.status } });
   } catch (error) {
     console.error('Approve Error:', error);
     res.status(400).json({ error: error.message || 'Failed to approve' });
@@ -121,14 +89,30 @@ const approveQuotation = async (req, res) => {
 // 3. REJECT QUOTATION
 const rejectQuotation = async (req, res) => {
   try {
+    const vendorId = req.user.userId;
     const { quotationId } = req.params;
-    
-    await prisma.order.update({
+
+    const vendorProducts = await prisma.product.findMany({
+      where: { vendorId },
+      select: { id: true }
+    });
+    const vendorProductIds = vendorProducts.map(p => p.id);
+
+    const order = await prisma.order.findUnique({
       where: { id: parseInt(quotationId) },
-      data: { status: 'CANCELLED' } 
+      include: { items: true }
     });
 
-    res.json({ success: true, message: 'Quotation rejected' });
+    if (!order) return res.status(404).json({ error: 'Quotation not found' });
+    const hasVendorItems = order.items.some(i => vendorProductIds.includes(i.productId));
+    if (!hasVendorItems) return res.status(403).json({ error: 'Unauthorized' });
+
+    const updated = await prisma.order.update({
+      where: { id: order.id },
+      data: { status: 'CANCELLED' }
+    });
+
+    res.status(200).json({ success: true, message: 'Quotation rejected', data: { id: updated.id, status: updated.status } });
   } catch (error) {
     res.status(500).json({ error: 'Failed to reject' });
   }

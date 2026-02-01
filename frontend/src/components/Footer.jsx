@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 function Footer() {
   return (
     <footer className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-300 py-20 rounded-t-3xl mx-4 mb-4 overflow-hidden shadow-2xl">
@@ -166,10 +168,10 @@ function Footer() {
           </h4>
           <ul className="flex flex-col gap-3.5 text-sm">
             <li>
-              <a className="flex items-center gap-2 hover:text-white hover:translate-x-1 transition-all duration-300 group" href="#">
+              <Link to="/terms" className="flex items-center gap-2 hover:text-white hover:translate-x-1 transition-all duration-300 group">
                 <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">→</span>
                 <span>Terms of Service</span>
-              </a>
+              </Link>
             </li>
             <li>
               <a className="flex items-center gap-2 hover:text-white hover:translate-x-1 transition-all duration-300 group" href="#">
@@ -223,4 +225,4 @@ function Footer() {
   )
 }
 
-export default Footer
+export default Footer;

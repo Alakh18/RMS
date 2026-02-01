@@ -1,53 +1,40 @@
-import { useState, useEffect } from 'react';
+// src/vendor/pages/Quotations.jsx
+import { useEffect, useState } from 'react';
 import { fetchQuotations, approveQuotation, rejectQuotation } from '../services/vendorApi';
 
 const Quotations = () => {
   const [vendorQuotations, setVendorQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // 1. Load Data
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadQuotations = async () => {
     try {
+      setLoading(true);
       const response = await fetchQuotations();
-      if(response.success) {
-         setVendorQuotations(response.data);
+      if (response.success) {
+        setVendorQuotations(response.data);
       }
-    } catch (error) {
-      console.error("Failed to load quotations", error);
+    } catch (err) {
+      console.error('Error loading quotations:', err);
+      setError('Failed to load quotations');
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. Handle Approve
+  useEffect(() => {
+    loadQuotations();
+  }, []);
+
   const handleApprove = async (id) => {
-    if(!confirm("Approve this quotation? Stock will be reserved.")) return;
-    try {
-      await approveQuotation(id);
-      alert("Quotation Approved!");
-      loadData(); // Refresh list
-    } catch (error) {
-      // This will show the "Double Booking" error if stock is unavailable
-      alert(error.response?.data?.error || "Failed to approve"); 
-    }
-  }
+    await approveQuotation(id);
+    loadQuotations();
+  };
 
-  // 3. Handle Reject
   const handleReject = async (id) => {
-    if(!confirm("Reject this quotation?")) return;
-    try {
-      await rejectQuotation(id);
-      loadData();
-    } catch (error) {
-      alert("Failed to reject");
-    }
-  }
-
-  if (loading) return <div>Loading...</div>;
+    await rejectQuotation(id);
+    loadQuotations();
+  };
 
   return (
     <div className="space-y-6">
@@ -56,8 +43,24 @@ const Quotations = () => {
         <p className="text-slate-600 mt-1">Requests waiting for your approval.</p>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-slate-500">Loading quotations...</p>
+            </div>
+          ) : vendorQuotations.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-slate-500">No quotations yet</p>
+            </div>
+          ) : (
+            <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">Customer</th>
@@ -69,31 +72,44 @@ const Quotations = () => {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {vendorQuotations.map((q) => (
-                <tr key={q.id} className="hover:bg-slate-50">
+                <tr key={q.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-900">{q.orderNumber || `QTN-${q.id}`}</td>
+                  <td className="px-6 py-4 text-slate-600">{q.customer}</td>
+                  <td className="px-6 py-4 font-medium text-slate-900">₹{parseFloat(q.amount).toLocaleString('en-IN')}</td>
                   <td className="px-6 py-4">
-                     <div className="font-bold text-slate-900">{q.customer?.firstName} {q.customer?.lastName}</div>
-                     <div className="text-xs text-slate-500">{q.customer?.email}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                     {q.items.map(i => (
-                        <div key={i.id}>{i.product.name} (x{i.quantity})</div>
-                     ))}
-                  </td>
-                  <td className="px-6 py-4 font-bold text-slate-900">₹{parseFloat(q.totalAmount).toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-slate-500">{new Date(q.updatedAt).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 flex gap-2">
-                    <button 
-                        onClick={() => handleApprove(q.id)}
-                        className="px-3 py-1 bg-green-100 text-green-700 rounded-md text-xs font-bold hover:bg-green-200"
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        q.status === 'SENT'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : q.status === 'CONFIRMED'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}
                     >
-                        Approve
-                    </button>
-                    <button 
-                        onClick={() => handleReject(q.id)}
-                        className="px-3 py-1 bg-red-100 text-red-700 rounded-md text-xs font-bold hover:bg-red-200"
-                    >
-                        Reject
-                    </button>
+                      {q.status === 'SENT' ? 'PENDING' : q.status === 'CONFIRMED' ? 'APPROVED' : 'REJECTED'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-600 text-sm">{new Date(q.date).toLocaleDateString()}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">View</button>
+                      {q.status === 'SENT' && (
+                        <>
+                          <button
+                            onClick={() => handleApprove(q.id)}
+                            className="text-green-600 hover:text-green-700 font-medium text-sm"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleReject(q.id)}
+                            className="text-red-600 hover:text-red-700 font-medium text-sm"
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -103,7 +119,9 @@ const Quotations = () => {
                 </tr>
               )}
             </tbody>
-        </table>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );

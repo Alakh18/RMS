@@ -27,8 +27,12 @@ app.use(express.json());  // Parse JSON body (Fixes undefined req.body)
 // Auth Routes (Login/Signup)
 app.use('/api/auth', authRoutes);
 
-// Public Routes (Product Browsing)
-app.use('/api/products', productRoutes);
+// Orders and admin routes
+app.use('/api/orders', orderRoutes);
+app.use('/api/admin', require('./routes/adminRoutes'));
+
+// Vendor routes (protected by vendorAuth middleware)
+app.use('/api/vendor', vendorRoutes);
 
 // Customer Routes (Cart, Request Quote)
 app.use('/api/orders', orderRoutes);
