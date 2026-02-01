@@ -392,10 +392,10 @@ const ProductsPage = () => {
                       
                       <div className="flex items-end justify-between">
                         <div>
-                          <p className="text-xs text-slate-500 mb-1">Starting from</p>
-                            <p className="text-2xl font-bold text-[#0d131c]">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Starting from</p>
+                            <p className="text-2xl font-bold text-[#0d131c] dark:text-slate-100">
                               ₹{getCurrentPrice(product).toLocaleString()}
-                              <span className="text-sm text-slate-500 font-normal">/{selectedPeriod}</span>
+                              <span className="text-sm text-slate-500 dark:text-slate-400 font-normal">/{selectedPeriod}</span>
                             </p>
                         </div>
                         <button className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-1">
@@ -404,12 +404,12 @@ const ProductsPage = () => {
                         </button>
                       </div>
                       
-                      <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                         <span className="flex items-center gap-1">
                           <span className="material-symbols-outlined text-sm">shield</span>
                           Deposit: ₹{(parseFloat(product.securityDeposit) || 0).toLocaleString()}
                         </span>
-                        <span className="text-emerald-600 font-semibold">{product.reviews || 0} reviews</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{product.reviews || 0} reviews</span>
                       </div>
                     </div>
                   </Link>

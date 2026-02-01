@@ -8,7 +8,6 @@ import Quotations from './pages/Quotations';
 import Invoices from './pages/Invoices';
 import Pickups from './pages/Pickups';
 import Returns from './pages/Returns';
-import Settings from './pages/Settings';
 
 // Protected Route wrapper for vendor-only access
 const ProtectedVendorRoute = ({ children }) => {
@@ -34,7 +33,6 @@ const VendorRoutes = () => {
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/pickups" element={<Pickups />} />
           <Route path="/returns" element={<Returns />} />
-          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/vendor/dashboard" replace />} />
         </Routes>
       </VendorLayout>

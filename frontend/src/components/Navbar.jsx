@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import CartDrawer from './CartDrawer';
 
 function Navbar() {
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useTheme();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -78,7 +80,7 @@ function Navbar() {
           <div className="size-9 sm:size-10 bg-gradient-to-br from-primary via-primary to-accent rounded-xl flex items-center justify-center text-white shadow-lg group-hover:shadow-primary/50 group-hover:scale-105 transition-all duration-300">
             <span className="material-symbols-outlined text-[22px] sm:text-[24px]">hexagon</span>
           </div>
-          <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-[#0d131c] to-primary bg-clip-text text-transparent">RentalEco</span>
+          <span className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-[#0d131c] to-primary dark:from-slate-100 dark:to-blue-400 bg-clip-text text-transparent">RentalEco</span>
         </div>
 
         {/* Navigation Links */}
@@ -109,10 +111,21 @@ function Navbar() {
 
         {/* Right Icons */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 sm:p-2.5 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-blue-400 transition-all duration-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 group"
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">
+              {isDarkMode ? 'light_mode' : 'dark_mode'}
+            </span>
+          </button>
+
           {/* Wishlist Link (Updated) */}
           <Link 
             to="/wishlist" 
-            className="p-2 sm:p-2.5 text-slate-600 hover:text-red-500 transition-all duration-300 rounded-xl hover:bg-red-50 group relative block"
+            className="p-2 sm:p-2.5 text-slate-600 dark:text-slate-300 hover:text-red-500 transition-all duration-300 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 group relative block"
           >
             <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">favorite</span>
             {wishlistCount > 0 && (
@@ -125,7 +138,7 @@ function Navbar() {
           {/* Cart Link */}
           <button
             onClick={() => setIsCartDrawerOpen(true)}
-            className="p-2 sm:p-2.5 text-slate-600 hover:text-primary transition-all duration-300 rounded-xl hover:bg-primary/10 relative group"
+            className="p-2 sm:p-2.5 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-blue-400 transition-all duration-300 rounded-xl hover:bg-primary/10 dark:hover:bg-blue-900/20 relative group"
           >
             <span className="material-symbols-outlined group-hover:scale-110 transition-transform duration-300">shopping_cart</span>
             {cartCount > 0 && (
@@ -188,14 +201,6 @@ function Navbar() {
                     My Orders
                   </Link>
                   
-                  <Link 
-                    to="/settings" 
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 rounded-xl hover:bg-primary/5 hover:text-primary transition-colors group"
-                  >
-                    <span className="material-symbols-outlined text-[20px] text-slate-400 group-hover:text-primary">settings</span>
-                    Settings
-                  </Link>
                 </div>
 
                 {/* Logout Button */}

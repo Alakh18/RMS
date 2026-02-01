@@ -96,42 +96,38 @@ function ProductPage() {
     return getCurrentPrice() * duration * quantity
   }
 
-  // ---------- BACKEND ADD TO CART ----------
-  const addToCartDirectly = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      alert('Please login to continue')
-      return navigate('/login')
+  const addToCartDirectly = () => {
+    const orderData = {
+      productId: product.id,
+      name: product.name,
+      image: product.image,
+      category: product.category,
+      brand: product.brand,
+      product,
+      quantity,
+      startDate,
+      endDate,
+      period: selectedPeriod,
+      // Ensure totalPrice is a number
+      totalPrice: typeof calculateTotalPrice() === 'number' ? calculateTotalPrice() : 0, 
+      selectedVariants: product.hasVariants ? selectedVariants : null
     }
+    
+    // 1. Get existing cart
+    const existingCart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    // 2. Add new item
+    const updatedCart = [...existingCart, orderData];
+    
+    // 3. Save back to localStorage
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    
+    // 4. Force navbar update
+    window.dispatchEvent(new Event('storage'));
 
-    if (!startDate || !endDate) {
-      alert('Please select rental dates')
-      return
-    }
-
-    try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
-      const res = await fetch(`${API_BASE}/api/orders/cart`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          productId: Number(id),
-          quantity,
-          startDate,
-          endDate,
-        }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) throw new Error(data.error)
-      navigate('/cart')
-    } catch (err) {
-      alert(err.message || 'Failed to add to cart')
-    }
+    console.log('Added to cart:', orderData);
+    // Navigate to cart instead of alert for better UX
+    navigate('/cart'); 
   }
 
   const handleAddToCart = () => {
@@ -178,9 +174,135 @@ function ProductPage() {
               ₹{getCurrentPrice()} / {selectedPeriod}
             </div>
 
-            {/* PERIOD */}
-            <div className="flex gap-2">
-              {['hour', 'day', 'week', 'month'].map(p => (
+            {/* Right: Product Details */}
+            <div className="space-y-6">
+              {/* Product Header */}
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-lg">
+                    {product.category}
+                  </span>
+                  <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg">
+                    {product.brand}
+                  </span>
+                </div>
+                <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-3">
+                  {product.name}
+                </h1>
+                <p className="text-slate-600 leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+
+              {/* Pricing */}
+              <div className="bg-gradient-to-br from-primary/5 to-accent/5 dark:from-primary/10 dark:to-accent/10 rounded-2xl p-6 border border-primary/20 dark:border-primary/30">
+                <div className="flex items-baseline gap-3 mb-4">
+                  <span className="text-4xl font-bold text-slate-900 dark:text-slate-100">
+                    ₹{getCurrentPrice()}
+                  </span>
+                  <span className="text-lg text-slate-600 dark:text-slate-400">/ {selectedPeriod}</span>
+                </div>
+                
+                {/* Period Selector */}
+                <div className="flex flex-wrap gap-2">
+                  {['hour', 'day', 'week', 'month'].map((period) => (
+                    <button
+                      key={period}
+                      onClick={() => setSelectedPeriod(period)}
+                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 ${
+                        selectedPeriod === period
+                          ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105'
+                          : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600'
+                      }`}
+                    >
+                      Per {period.charAt(0).toUpperCase() + period.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Rental Period */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary">calendar_today</span>
+                  Rental Period
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Start Date & Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      max={endDate || undefined}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      End Date & Time
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      min={startDate || undefined}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">info</span>
+                  Timezone: UTC +01:00
+                </p>
+              </div>
+
+              {/* Quantity Selector */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-900">Quantity</h3>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center border-2 border-slate-300 rounded-xl overflow-hidden">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                    >
+                      <span className="material-symbols-outlined">remove</span>
+                    </button>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-16 text-center py-3 border-x-2 border-slate-300 focus:outline-none"
+                    />
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+                      className="px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors"
+                    >
+                      <span className="material-symbols-outlined">add</span>
+                    </button>
+                  </div>
+                  <span className="text-sm text-slate-600">
+                    {product.stockQuantity} units available
+                  </span>
+                </div>
+              </div>
+
+              {/* Total Price Display */}
+              {startDate && endDate && (
+                <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-700 rounded-2xl p-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">Estimated Total:</span>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                      ₹{calculateTotalPrice().toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
                 <button
                   key={p}
                   onClick={() => setSelectedPeriod(p)}
