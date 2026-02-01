@@ -102,6 +102,43 @@ const addToCart = async (req, res) => {
 };
 
 // ==========================================
+// 1B. SUBMIT QUOTATION (Move DRAFT -> SENT)
+// ==========================================
+const submitQuotation = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const order = await prisma.order.findFirst({
+      where: { customerId: userId, status: 'DRAFT' },
+      include: { items: true }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'No draft quotation found' });
+    }
+
+    if (!order.items.length) {
+      return res.status(400).json({ error: 'Quotation is empty' });
+    }
+
+    await recalcOrderTotals(prisma, order.id);
+
+    const updated = await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        status: 'SENT',
+        orderNumber: order.orderNumber || `QTN-${Date.now()}`
+      }
+    });
+
+    res.json({ success: true, message: 'Quotation submitted', orderId: updated.id, status: updated.status, orderNumber: updated.orderNumber });
+  } catch (error) {
+    console.error('Submit Quotation Error:', error);
+    res.status(500).json({ error: 'Failed to submit quotation' });
+  }
+};
+
+// ==========================================
 // 2. CONFIRM ORDER (The "Double Booking" Check)
 // ==========================================
 const confirmOrder = async (req, res) => {
@@ -211,6 +248,91 @@ const confirmOrder = async (req, res) => {
 };
 
 // ==========================================
+// 2B. PAY CONFIRMED QUOTATION
+// ==========================================
+const payOrder = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    const userId = req.user.userId;
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true }
+    });
+
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.customerId !== userId) return res.status(403).json({ error: 'Unauthorized' });
+    if (order.status !== 'CONFIRMED') {
+      return res.status(400).json({ error: 'Quotation not approved yet' });
+    }
+
+    const existingInvoice = await prisma.invoice.findFirst({ where: { orderId: order.id } });
+
+    if (!existingInvoice) {
+      const invoice = await prisma.invoice.create({
+        data: {
+          orderId: order.id,
+          invoiceNumber: `INV-${Date.now()}`,
+          status: 'PAID',
+          totalAmount: order.totalAmount,
+          paidAmount: order.totalAmount,
+          balanceAmount: 0,
+          dueDate: new Date(),
+        }
+      });
+
+      await prisma.payment.create({
+        data: {
+          invoiceId: invoice.id,
+          amount: order.totalAmount,
+          method: 'CARD',
+          transactionId: `PAY-${Date.now()}`,
+        }
+      });
+    }
+
+    res.json({ success: true, message: 'Payment recorded', orderId: order.id, orderNumber: order.orderNumber });
+  } catch (error) {
+    console.error('Pay Order Error:', error);
+    res.status(500).json({ error: 'Failed to record payment' });
+  }
+};
+
+// ==========================================
+// 3B. GET QUOTATION STATUS (Customer)
+// ==========================================
+const getQuotationStatus = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const order = await prisma.order.findFirst({
+      where: {
+        customerId: userId,
+        status: { in: ['DRAFT', 'SENT', 'CONFIRMED', 'CANCELLED'] }
+      },
+      orderBy: { updatedAt: 'desc' },
+      include: { items: { include: { product: true } } }
+    });
+
+    if (!order) return res.json({ success: true, data: null });
+
+    res.json({
+      success: true,
+      data: {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        totalAmount: order.totalAmount.toString(),
+        items: order.items
+      }
+    });
+  } catch (error) {
+    console.error('Get Quotation Status Error:', error);
+    res.status(500).json({ error: 'Failed to fetch quotation status' });
+  }
+};
+
+// ==========================================
 // 3. VIEW QUOTATION
 // ==========================================
 const getMyCart = async (req, res) => {
@@ -225,4 +347,4 @@ const getMyCart = async (req, res) => {
   }
 };
 
-module.exports = { addToCart, confirmOrder, getMyCart };
+module.exports = { addToCart, confirmOrder, getMyCart, submitQuotation, getQuotationStatus, payOrder };

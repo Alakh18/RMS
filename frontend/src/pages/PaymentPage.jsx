@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { addItemToCart, confirmOrder } from '../services/orderApi';
+import { addItemToCart, submitQuotation, getQuotationStatus, payOrder } from '../services/orderApi';
 
 const PaymentPage = () => {
   const navigate = useNavigate();
@@ -11,6 +11,8 @@ const PaymentPage = () => {
   const [address, setAddress] = useState(null);
   const [saveCard, setSaveCard] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [quotationStatus, setQuotationStatus] = useState(null);
+  const [quotationId, setQuotationId] = useState(null);
 
   useEffect(() => {
     const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -32,16 +34,35 @@ const PaymentPage = () => {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const res = await getQuotationStatus();
+        if (res?.data) {
+          setQuotationStatus(res.data.status);
+          setQuotationId(res.data.id);
+        } else {
+          setQuotationStatus(null);
+          setQuotationId(null);
+        }
+      } catch (err) {
+        console.error('Failed to load quotation status:', err);
+      }
+    };
+
+    loadStatus();
+  }, []);
+
   const subTotal = cartItems.reduce(
     (total, item) => total + item.totalPrice * item.quantity,
     0
   );
   const total = subTotal;
 
-  const handlePayNow = async () => {
+  const handleRequestQuotation = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Please log in to place an order.');
+      alert('Please log in to submit quotation.');
       navigate('/login');
       return;
     }
@@ -67,12 +88,40 @@ const PaymentPage = () => {
         }
       }
 
-      if (!orderId) {
-        throw new Error('Unable to create order. Please try again.');
-      }
+      if (!orderId) throw new Error('Unable to create quotation');
 
-      const confirmRes = await confirmOrder(orderId);
-      const orderNumber = confirmRes?.orderNumber || `ORD-${orderId}`;
+      const submitRes = await submitQuotation();
+      setQuotationStatus(submitRes?.status || 'SENT');
+      setQuotationId(submitRes?.orderId || orderId);
+    } catch (error) {
+      console.error('Quotation error:', error);
+      alert('Failed to submit quotation. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayNow = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to place an order.');
+      navigate('/login');
+      return;
+    }
+
+    if (quotationStatus !== 'CONFIRMED') {
+      alert('Quotation not approved yet.');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const orderId = quotationId;
+      if (!orderId) throw new Error('No quotation found for payment');
+
+      const payRes = await payOrder(orderId);
+      const orderNumber = payRes?.orderNumber || `ORD-${orderId}`;
 
       const orderData = {
         orderItems: cartItems,
@@ -114,6 +163,45 @@ const PaymentPage = () => {
           {/* LEFT COLUMN: Payment Forms */}
           <div className="lg:col-span-2 space-y-8">
             <h2 className="text-2xl font-black text-slate-900">Payment Method</h2>
+
+            {/* Quotation Status */}
+            <div className="glass-panel p-6 rounded-3xl border border-white/50">
+              <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">request_quote</span>
+                Quotation Status
+              </h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`px-4 py-2 rounded-xl text-sm font-bold border ${
+                  quotationStatus === 'CONFIRMED'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : quotationStatus === 'SENT'
+                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    : quotationStatus === 'CANCELLED'
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : 'bg-slate-50 text-slate-700 border-slate-200'
+                }`}>
+                  {quotationStatus === 'CONFIRMED'
+                    ? 'APPROVED'
+                    : quotationStatus === 'SENT'
+                    ? 'PENDING'
+                    : quotationStatus === 'CANCELLED'
+                    ? 'REJECTED'
+                    : 'NOT SUBMITTED'}
+                </span>
+                {quotationStatus !== 'CONFIRMED' && (
+                  <button
+                    onClick={handleRequestQuotation}
+                    disabled={isProcessing}
+                    className="px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-all disabled:opacity-60"
+                  >
+                    Request Quotation
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-slate-600 mt-3">
+                You can pay only after the vendor approves your quotation.
+              </p>
+            </div>
 
             {/* 1. Credit Card Form */}
             <div className="glass-panel p-8 rounded-3xl border border-white/50 relative overflow-hidden">
@@ -203,7 +291,6 @@ const PaymentPage = () => {
                 </button>
               </div>
             </div>
-
           </div>
 
           {/* RIGHT COLUMN: Order Summary */}
@@ -268,14 +355,14 @@ const PaymentPage = () => {
               {/* Pay Now Button */}
               <button 
                 onClick={handlePayNow}
-                disabled={isProcessing}
+                disabled={isProcessing || quotationStatus !== 'CONFIRMED'}
                 className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all mb-6 flex items-center justify-center gap-2 shadow-lg hover:shadow-slate-900/20 disabled:opacity-70 disabled:cursor-not-allowed group"
               >
                 {isProcessing ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                 ) : (
                   <>
-                    Pay Now
+                    {quotationStatus === 'CONFIRMED' ? 'Pay Now' : 'Awaiting Approval'}
                     <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                   </>
                 )}

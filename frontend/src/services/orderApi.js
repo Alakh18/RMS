@@ -28,3 +28,28 @@ export const confirmOrder = async (orderId) => {
   );
   return res.data;
 };
+
+export const submitQuotation = async () => {
+  const res = await axios.post(
+    `${API_BASE_URL}/orders/submit-quotation`,
+    {},
+    { headers: getAuthHeader() }
+  );
+  return res.data;
+};
+
+export const getQuotationStatus = async () => {
+  const res = await axios.get(`${API_BASE_URL}/orders/quotation-status`, {
+    headers: getAuthHeader(),
+  });
+  return res.data;
+};
+
+export const payOrder = async (orderId) => {
+  const res = await axios.post(
+    `${API_BASE_URL}/orders/pay`,
+    { orderId },
+    { headers: getAuthHeader() }
+  );
+  return res.data;
+};
