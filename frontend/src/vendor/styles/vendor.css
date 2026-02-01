@@ -13,6 +13,14 @@
   --vendor-border: #e5e7eb;
 }
 
+/* Dark mode vendor variables */
+.dark {
+  --vendor-bg: #1e293b;
+  --vendor-text-primary: #f1f5f9;
+  --vendor-text-secondary: #cbd5e1;
+  --vendor-border: #334155;
+}
+
 /* Vendor Layout Styles */
 .vendor-layout {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
@@ -144,8 +152,69 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.dark .vendor-layout .bg-white {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--vendor-border);
+}
+
 .vendor-layout .bg-white:hover {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+}
+
+.dark .vendor-layout .bg-white:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode text adjustments */
+.dark .vendor-layout .text-slate-900,
+.dark .vendor-layout .text-gray-900 {
+  color: var(--vendor-text-primary);
+}
+
+.dark .vendor-layout .text-slate-700,
+.dark .vendor-layout .text-gray-700 {
+  color: var(--vendor-text-secondary);
+}
+
+.dark .vendor-layout .text-slate-600,
+.dark .vendor-layout .text-gray-600 {
+  color: var(--vendor-text-secondary);
+}
+
+/* Dark mode border adjustments */
+.dark .vendor-layout .border-slate-200,
+.dark .vendor-layout .border-gray-200 {
+  border-color: var(--vendor-border);
+}
+
+/* Dark mode background adjustments */
+.dark .vendor-layout .bg-slate-50,
+.dark .vendor-layout .bg-gray-50 {
+  background-color: var(--bg-secondary);
+}
+
+.dark .vendor-layout .bg-slate-100,
+.dark .vendor-layout .bg-gray-100 {
+  background-color: var(--bg-tertiary);
+}
+
+/* Dark mode input fields */
+.dark .vendor-layout input[type='text'],
+.dark .vendor-layout input[type='email'],
+.dark .vendor-layout input[type='password'],
+.dark .vendor-layout input[type='tel'],
+.dark .vendor-layout input[type='date'],
+.dark .vendor-layout input[type='number'],
+.dark .vendor-layout select,
+.dark .vendor-layout textarea {
+  background-color: var(--bg-secondary);
+  border-color: var(--vendor-border);
+  color: var(--vendor-text-primary);
+}
+
+.dark .vendor-layout input::placeholder,
+.dark .vendor-layout textarea::placeholder {
+  color: var(--text-tertiary);
 }
 
 /* Responsive Grid */
@@ -198,16 +267,34 @@
   border: 1px solid #bbf7d0;
 }
 
+.dark .vendor-notification.success {
+  background-color: rgba(22, 163, 74, 0.2);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
 .vendor-notification.error {
   background-color: #fee2e2;
   color: #991b1b;
   border: 1px solid #fecaca;
 }
 
+.dark .vendor-notification.error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
 .vendor-notification.warning {
   background-color: #fef3c7;
   color: #b45309;
   border: 1px solid #fde68a;
+}
+
+.dark .vendor-notification.warning {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.3);
 }
 
 /* Loading state */

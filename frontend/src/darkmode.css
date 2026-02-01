@@ -1,0 +1,368 @@
+/* Dark Mode Utility Classes and Overrides */
+
+/* Background Colors */
+.dark .bg-background-light {
+  background-color: var(--bg-secondary);
+}
+
+.dark .bg-slate-50 {
+  background-color: var(--bg-secondary);
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--bg-tertiary);
+}
+
+.dark .bg-slate-200 {
+  background-color: #475569;
+}
+
+/* Text Colors */
+.dark .text-slate-900 {
+  color: var(--text-primary);
+}
+
+.dark .text-slate-800 {
+  color: var(--text-secondary);
+}
+
+.dark .text-slate-700 {
+  color: var(--text-secondary);
+}
+
+.dark .text-slate-600 {
+  color: var(--text-tertiary);
+}
+
+.dark .text-slate-500 {
+  color: var(--text-tertiary);
+}
+
+.dark .text-slate-400 {
+  color: #94a3b8;
+}
+
+.dark .text-gray-900 {
+  color: var(--text-primary);
+}
+
+.dark .text-gray-800 {
+  color: var(--text-secondary);
+}
+
+.dark .text-gray-700 {
+  color: var(--text-secondary);
+}
+
+.dark .text-gray-600 {
+  color: var(--text-tertiary);
+}
+
+/* Border Colors */
+.dark .border-slate-200 {
+  border-color: var(--border-color);
+}
+
+.dark .border-slate-300 {
+  border-color: var(--border-color);
+}
+
+.dark .border-gray-200 {
+  border-color: var(--border-color);
+}
+
+.dark .border-gray-300 {
+  border-color: var(--border-color);
+}
+
+/* Hover States */
+.dark .hover\:bg-slate-50:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--border-color);
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.dark .hover\:text-slate-900:hover {
+  color: var(--text-primary);
+}
+
+/* Focus States */
+.dark .focus\:bg-white:focus {
+  background-color: var(--bg-secondary);
+}
+
+.dark .focus\:border-primary\/30:focus {
+  border-color: rgba(37, 123, 244, 0.4);
+}
+
+/* Form Elements */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="tel"],
+.dark input[type="date"],
+.dark input[type="number"],
+.dark select,
+.dark textarea {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  background-color: var(--bg-secondary);
+  border-color: #3b82f6;
+}
+
+/* Shadows */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.dark .shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+}
+
+.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+}
+
+.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+}
+
+.dark .shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+}
+
+/* Cards */
+.dark .bg-white.rounded-2xl,
+.dark .bg-white.rounded-xl,
+.dark .bg-white.rounded-lg {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+/* Hover Shadow Effects */
+.dark .hover\:shadow-xl:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+}
+
+.dark .hover\:shadow-lg:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+}
+
+/* Status Badges - keep colors vibrant in dark mode */
+.dark .bg-green-100 {
+  background-color: rgba(34, 197, 94, 0.2);
+}
+
+.dark .text-green-700 {
+  color: #86efac;
+}
+
+.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+.dark .text-blue-700 {
+  color: #93c5fd;
+}
+
+.dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+.dark .text-red-700 {
+  color: #fca5a5;
+}
+
+.dark .bg-yellow-100 {
+  background-color: rgba(245, 158, 11, 0.2);
+}
+
+.dark .text-yellow-700 {
+  color: #fcd34d;
+}
+
+.dark .bg-orange-100 {
+  background-color: rgba(249, 115, 22, 0.2);
+}
+
+.dark .text-orange-700 {
+  color: #fdba74;
+}
+
+.dark .bg-purple-100 {
+  background-color: rgba(168, 85, 247, 0.2);
+}
+
+.dark .text-purple-700 {
+  color: #d8b4fe;
+}
+
+/* Primary Color Adjustments */
+.dark .bg-primary {
+  background-color: #3b82f6;
+}
+
+.dark .hover\:bg-primary:hover {
+  background-color: #2563eb;
+}
+
+.dark .text-primary {
+  color: #60a5fa;
+}
+
+.dark .hover\:text-primary:hover {
+  color: #3b82f6;
+}
+
+/* Accent Color Adjustments */
+.dark .bg-accent {
+  background-color: #f59e0b;
+}
+
+.dark .text-accent {
+  color: #fbbf24;
+}
+
+/* Backdrop and Overlay */
+.dark .backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  background-color: rgba(15, 23, 42, 0.6);
+}
+
+/* Dividers */
+.dark .divide-slate-200 > * + * {
+  border-color: var(--border-color);
+}
+
+.dark .divide-gray-200 > * + * {
+  border-color: var(--border-color);
+}
+
+/* Ring Colors */
+.dark .ring-primary\/30 {
+  --tw-ring-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark .ring-slate-200 {
+  --tw-ring-color: var(--border-color);
+}
+
+/* Gradient Overlays */
+.dark .from-white {
+  --tw-gradient-from: var(--bg-primary);
+}
+
+.dark .to-white {
+  --tw-gradient-to: var(--bg-primary);
+}
+
+/* Scrollbar Styling for Dark Mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Selection Colors */
+.dark ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: var(--text-primary);
+}
+
+/* Links */
+.dark a {
+  color: #60a5fa;
+}
+
+.dark a:hover {
+  color: #3b82f6;
+}
+
+/* Table Styles */
+.dark table {
+  border-color: var(--border-color);
+}
+
+.dark thead {
+  background-color: var(--bg-tertiary);
+}
+
+.dark tbody tr {
+  border-color: var(--border-color);
+}
+
+.dark tbody tr:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Modal/Dialog Overlay */
+.dark .fixed.inset-0.bg-black {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Button Variants */
+.dark .bg-blue-600 {
+  background-color: #2563eb;
+}
+
+.dark .hover\:bg-blue-700:hover {
+  background-color: #1d4ed8;
+}
+
+.dark .bg-red-600 {
+  background-color: #dc2626;
+}
+
+.dark .hover\:bg-red-700:hover {
+  background-color: #b91c1c;
+}
+
+/* Alert/Banner Backgrounds */
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.dark .bg-green-50 {
+  background-color: rgba(34, 197, 94, 0.1);
+}
+
+.dark .bg-yellow-50 {
+  background-color: rgba(245, 158, 11, 0.1);
+}

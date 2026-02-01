@@ -142,35 +142,39 @@ const CartDrawer = ({ isOpen, onClose }) => {
                   <div className="flex gap-4">
                     {/* Image */}
                     <Link 
-                      to={`/product/${item.productId}`}
+                      to={`/product/${item.productId || item.product?.id}`}
                       onClick={onClose}
                       className="relative w-20 h-20 rounded-xl overflow-hidden bg-white border border-slate-200 shrink-0"
                     >
                       <img 
-                        src={item.image} 
-                        alt={item.name}
+                        src={item.image || item.product?.image || 'https://via.placeholder.com/150?text=Product'} 
+                        alt={item.name || item.product?.name || 'Product'}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                        }}
                       />
                     </Link>
 
                     {/* Details */}
                     <div className="flex-1 min-w-0">
                       <Link 
-                        to={`/product/${item.productId}`}
+                        to={`/product/${item.productId || item.product?.id}`}
                         onClick={onClose}
                         className="block"
                       >
-                        <h4 className="font-bold text-slate-900 text-sm mb-1 line-clamp-1 group-hover:text-primary transition-colors">
-                          {item.name}
+                        <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 line-clamp-1 group-hover:text-primary transition-colors">
+                          {item.name || item.product?.name || 'Product'}
                         </h4>
                       </Link>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-0.5 bg-white text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded border border-slate-200">
+                        <span className="px-2 py-0.5 bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded border border-slate-200 dark:border-slate-600">
                           {item.period}
                         </span>
-                        {item.category && (
-                          <span className="text-[10px] text-slate-500">
-                            {item.category}
+                        {(item.category || item.product?.category) && (
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                            {item.category || item.product?.category}
                           </span>
                         )}
                       </div>
