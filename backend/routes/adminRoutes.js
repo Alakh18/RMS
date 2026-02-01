@@ -1,8 +1,8 @@
 // src/routes/adminRoutes.js
 const express = require('express');
 const router = express.Router();
-const { getAllUsers } = require('../controllers/adminController');
-const { verifyAdmin } = require('../middlewares/adminMiddleware'); // Ensure you have this
+const { getAllUsers, deleteUser, updateUser } = require('../controllers/adminController'); //
+const { verifyAdmin } = require('../middlewares/adminMiddleware'); //
 const jwt = require('jsonwebtoken');
 
 // Middleware to verify Token AND Admin role
@@ -19,7 +19,16 @@ const authMiddleware = async (req, res, next) => {
     }
 };
 
+// Apply auth middleware to all admin routes
+router.use(authMiddleware, verifyAdmin);
+
 // Route: GET /api/admin/users
-router.get('/users', authMiddleware, verifyAdmin, getAllUsers);
+router.get('/users', getAllUsers);
+
+// Route: DELETE /api/admin/users/:id
+router.delete('/users/:id', deleteUser);
+
+// Route: PATCH /api/admin/users/:id
+router.patch('/users/:id', updateUser);
 
 module.exports = router;

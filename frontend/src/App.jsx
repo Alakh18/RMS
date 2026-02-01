@@ -46,6 +46,7 @@ function App() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/orders" element={<OrdersPage />} />
+      <Route path="/admin/dashboard" element={<AdminDashboard />} />
     </Routes>
   )
 }
