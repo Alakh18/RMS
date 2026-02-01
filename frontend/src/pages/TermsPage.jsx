@@ -167,6 +167,7 @@ const TermsPage = () => {
                   </div>
                 </section>
 
+
                 {/* 4. Pricing, Payments, and Taxes */}
                 <section id="pricing" className="scroll-mt-24">
                   <div className="flex items-center gap-3 mb-4">
