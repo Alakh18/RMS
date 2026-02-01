@@ -1,7 +1,8 @@
-// src/controllers/orderController.js
+const { PrismaClient } = require('@prisma/client');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const prisma = require('../src/prisma');
+
+const prisma = new PrismaClient();
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -10,7 +11,7 @@ const razorpay = new Razorpay({
 });
 
 // ==========================================
-// 1. ADD TO QUOTATION (Add to Cart)
+// 1. ADD TO CART (For single item adds)
 // ==========================================
 const addToCart = async (req, res) => {
   try {
@@ -19,10 +20,8 @@ const addToCart = async (req, res) => {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    if (start >= end) {
-      return res.status(400).json({ error: 'End date must be after start date' });
-    }
 
+    // Find or Create Draft Order
     let order = await prisma.order.findFirst({
       where: { customerId: userId, status: 'DRAFT' }
     });
@@ -40,181 +39,173 @@ const addToCart = async (req, res) => {
       });
     }
 
-    const product = await prisma.product.findUnique({ where: { id: productId } });
+    // Fetch Product & Calculate Price
+    const product = await prisma.product.findUnique({ where: { id: parseInt(productId) } });
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    // Calculate Price
     const oneDay = 24 * 60 * 60 * 1000;
-    const days = Math.round(Math.abs((end - start) / oneDay)) || 1;
-    const priceAtBooking = product.price;
+    const days = Math.max(1, Math.round(Math.abs((end - start) / oneDay)));
+    const price = Number(product.price);
 
+    // Add Item
     await prisma.orderItem.create({
       data: {
         orderId: order.id,
-        productId,
-        quantity,
-        priceAtBooking,
+        productId: product.id,
+        quantity: quantity,
+        priceAtBooking: price,
         startDate: start,
         endDate: end
       }
     });
 
-    // Update Order Total
-    const currentTotal = Number(order.totalAmount) + (Number(priceAtBooking) * quantity * days);
-    await prisma.order.update({
-      where: { id: order.id },
-      data: { totalAmount: currentTotal }
-    });
-
-    res.json({ message: 'Item added to quotation', orderId: order.id });
+    res.json({ message: 'Item added to cart', orderId: order.id });
   } catch (error) {
-    console.error("Add to cart error:", error);
-    res.status(500).json({ error: 'Failed to add item' });
+    console.error("Add to Cart Error:", error);
+    res.status(500).json({ error: 'Failed to add item to cart' });
   }
 };
 
 // ==========================================
-// 2. INITIATE PAYMENT (Step 1: Check Stock & Create RZP Order)
+// 2. INITIATE PAYMENT (Fixes "No Cart" Error)
 // ==========================================
 const initiatePayment = async (req, res) => {
   try {
     const userId = req.user.userId;
+    const { items: frontendItems } = req.body; 
 
-    // 1. Find the User's Draft Order
-    const order = await prisma.order.findFirst({
+    // A. Check for existing DB Order
+    let order = await prisma.order.findFirst({
       where: { customerId: userId, status: 'DRAFT' },
       include: { items: true, customer: true }
     });
 
-    if (!order) return res.status(404).json({ error: "No active quotation found" });
-
-    // 2. STOCK CHECK (Crucial: Don't take money if stock is gone)
-    for (const item of order.items) {
-      const overlappingItems = await prisma.orderItem.findMany({
-        where: {
-          productId: item.productId,
-          order: { status: { in: ['CONFIRMED', 'PICKED_UP'] } },
-          AND: [{ startDate: { lt: item.endDate } }, { endDate: { gt: item.startDate } }]
-        }
-      });
-
-      const reservedQuantity = overlappingItems.reduce((sum, i) => sum + i.quantity, 0);
-      const product = await prisma.product.findUnique({ where: { id: item.productId } });
-
-      if ((reservedQuantity + item.quantity) > product.quantity) {
-        return res.status(400).json({ error: `Product '${product.name}' is unavailable for these dates.` });
+    // B. If missing, create from Frontend Items
+    if (!order) {
+      if (!frontendItems || frontendItems.length === 0) {
+        return res.status(404).json({ error: "No items to checkout." });
       }
+
+      console.log("Creating new DRAFT order for payment...");
+
+      let calculatedTotal = 0;
+      const orderItemsData = [];
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      for (const item of frontendItems) {
+        const pId = parseInt(item.productId || item.product?.id);
+        const product = await prisma.product.findUnique({ where: { id: pId } });
+        
+        if (product) {
+            const start = new Date(item.startDate);
+            const end = new Date(item.endDate);
+            const days = Math.max(1, Math.round(Math.abs((end - start) / oneDay)));
+            const price = Number(product.price);
+            
+            calculatedTotal += price * item.quantity * days;
+
+            orderItemsData.push({
+                productId: product.id,
+                quantity: item.quantity,
+                priceAtBooking: price,
+                startDate: start,
+                endDate: end
+            });
+        }
+      }
+
+      order = await prisma.order.create({
+        data: {
+          customerId: userId,
+          status: 'DRAFT',
+          orderNumber: `QTN-${Date.now()}`,
+          startDate: new Date(),
+          endDate: new Date(),
+          totalAmount: calculatedTotal,
+          items: { create: orderItemsData }
+        },
+        include: { items: true, customer: true }
+      });
     }
 
-    // 3. Create Razorpay Order
+    // C. Create Razorpay Order
     const amountInPaise = Math.round(Number(order.totalAmount) * 100);
     const rzpOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency: "INR",
       receipt: order.orderNumber,
+      notes: { customerId: userId, orderId: order.id }
     });
 
-    // 4. Send Details to Frontend
     res.json({
       success: true,
       rzpOrderId: rzpOrder.id,
       amount: rzpOrder.amount,
       currency: rzpOrder.currency,
-      dbOrderId: order.id, // We need this for verification later
+      dbOrderId: order.id,
       customer: {
-        name: `${order.customer.firstName} ${order.customer.lastName}`,
+        name: order.customer.firstName,
         email: order.customer.email,
-        contact: "9999999999" // Replace with actual phone field if available
+        contact: ""
       }
     });
 
   } catch (error) {
     console.error("Payment Init Error:", error);
-    res.status(500).json({ error: error.message || "Payment initiation failed" });
+    res.status(500).json({ error: error.message || "Payment init failed" });
   }
 };
 
 // ==========================================
-// 3. VERIFY PAYMENT (Step 2: Confirm Order & Invoice)
+// 3. VERIFY PAYMENT
 // ==========================================
 const verifyOrder = async (req, res) => {
   try {
-    const { 
-      razorpay_order_id, 
-      razorpay_payment_id, 
-      razorpay_signature, 
-      dbOrderId 
-    } = req.body;
-
-    // 1. Verify Signature
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, dbOrderId } = req.body;
+    
+    // Verify Signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest("hex");
+    const expectedSignature = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(body.toString()).digest("hex");
 
     if (expectedSignature !== razorpay_signature) {
       return res.status(400).json({ success: false, error: "Invalid Signature" });
     }
 
-    // 2. Transaction: Update Order, Create Invoice, Record Payment
-    const result = await prisma.$transaction(async (tx) => {
-      // Update Order Status
-      const updatedOrder = await tx.order.update({
-        where: { id: parseInt(dbOrderId) },
-        data: { 
-          status: 'CONFIRMED',
-          orderNumber: `ORD-${Date.now()}` // Convert QTN to ORD
-        }
-      });
-
-      // Create Invoice
-      const invoice = await tx.invoice.create({
-        data: {
-          invoiceNumber: `INV-${Date.now()}`,
-          status: 'PAID',
-          totalAmount: updatedOrder.totalAmount,
-          paidAmount: updatedOrder.totalAmount,
-          balanceAmount: 0,
-          dueDate: new Date(), // Due immediately
-          orderId: updatedOrder.id
-        }
-      });
-
-      // Record Payment
-      await tx.payment.create({
-        data: {
-          amount: updatedOrder.totalAmount,
-          method: 'CARD', // Or 'UPI', 'NET_BANKING' based on Razorpay response details if available
-          transactionId: razorpay_payment_id,
-          invoiceId: invoice.id
-        }
-      });
-
-      return updatedOrder;
+    // Confirm Order
+    await prisma.order.update({
+      where: { id: parseInt(dbOrderId) },
+      data: { status: 'CONFIRMED', orderNumber: `ORD-${Date.now()}` }
     });
 
-    res.json({ success: true, orderId: result.orderNumber });
-
+    res.json({ success: true, orderId: dbOrderId });
   } catch (error) {
-    console.error("Verification Error:", error);
-    res.status(500).json({ success: false, error: "Payment verification failed" });
+    console.error("Verify Error", error);
+    res.status(500).json({ error: "Verification failed" });
   }
 };
 
 // ==========================================
-// 4. VIEW QUOTATION (Get My Cart)
+// 4. GET MY CART
 // ==========================================
 const getMyCart = async (req, res) => {
   try {
     const order = await prisma.order.findFirst({
-      where: { customerId: req.user.userId, status: 'DRAFT' },
-      include: { items: { include: { product: true } } }
+        where: { customerId: req.user.userId, status: 'DRAFT' },
+        include: { items: { include: { product: true } } }
     });
-    res.json(order || { items: [] });
+    // Return items array (or empty if no order)
+    res.json(order ? order.items : []);
   } catch (error) {
-    res.status(500).json({ error: 'Error fetching quotation' });
+    console.error("Get Cart Error:", error);
+    res.status(500).json({ error: "Failed to fetch cart" });
   }
 };
 
-module.exports = { addToCart, initiatePayment, verifyOrder, getMyCart };
+// [!] CRITICAL: EXPORT ALL FUNCTIONS
+module.exports = { 
+  addToCart, 
+  initiatePayment, 
+  verifyOrder, 
+  getMyCart 
+};

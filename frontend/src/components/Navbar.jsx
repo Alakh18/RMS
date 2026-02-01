@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import CartDrawer from './CartDrawer';
 
+const API_BASE_URL = import.meta?.env?.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
 function Navbar() {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -11,20 +13,41 @@ function Navbar() {
   const [wishlistCount, setWishlistCount] = useState(0);
   const dropdownRef = useRef(null);
 
-  // Load user data and cart count when component mounts
   useEffect(() => {
-    const updateAuthAndCart = () => {
-      // Update User
+    const updateAuthAndCart = async () => {
+      // 1. Update User
       const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
       if (storedUser) {
         setUser(JSON.parse(storedUser));
+      } else {
+        setUser(null);
       }
 
-      // Update Cart Count
-      const cart = JSON.parse(localStorage.getItem('cart')) || [];
-      setCartCount(cart.length);
+      // 2. Update Cart Count from DB
+      if (token) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/orders/cart`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const items = await response.json();
+            // Assuming response is an array of items. 
+            // If it returns { items: [] }, change to items.items.length
+            setCartCount(Array.isArray(items) ? items.length : 0);
+          }
+        } catch (error) {
+          console.error("Failed to fetch cart count:", error);
+        }
+      } else {
+        setCartCount(0);
+      }
       
-      // Update Wishlist Count
+      // 3. Update Wishlist (Still LocalStorage for now)
       const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
       setWishlistCount(wishlist.length);
     };
@@ -32,10 +55,10 @@ function Navbar() {
     // Run on mount
     updateAuthAndCart();
 
-    // Listen for changes (Login/Logout or Add to Cart/Wishlist)
+    // Listen for changes
+    // 'storage' event is triggered by ProductPage after successful API call
     window.addEventListener('storage', updateAuthAndCart);
     
-    // Cleanup
     return () => window.removeEventListener('storage', updateAuthAndCart);
   }, []);
 
@@ -61,7 +84,9 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Also clear cart locally if any residual state exists
     setUser(null);
+    setCartCount(0);
     setIsDropdownOpen(false);
     navigate('/login');
   };
@@ -109,7 +134,7 @@ function Navbar() {
 
         {/* Right Icons */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* Wishlist Link (Updated) */}
+          {/* Wishlist Link */}
           <Link 
             to="/wishlist" 
             className="p-2 sm:p-2.5 text-slate-600 hover:text-red-500 transition-all duration-300 rounded-xl hover:bg-red-50 group relative block"
@@ -158,7 +183,6 @@ function Navbar() {
             {isDropdownOpen && user && (
               <div className="absolute right-0 top-full mt-3 w-60 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform origin-top-right transition-all animate-in fade-in slide-in-from-top-2">
                 
-                {/* User Info Header */}
                 <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
                   <p className="text-sm font-bold text-slate-900 truncate">
                     {user.firstName} {user.lastName}
@@ -168,7 +192,6 @@ function Navbar() {
                   </p>
                 </div>
 
-                {/* Menu Items */}
                 <div className="p-2">
                   <Link 
                     to="/profile" 
@@ -198,7 +221,6 @@ function Navbar() {
                   </Link>
                 </div>
 
-                {/* Logout Button */}
                 <div className="p-2 border-t border-slate-100">
                   <button 
                     onClick={handleLogout}
@@ -214,7 +236,6 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Cart Drawer */}
       <CartDrawer isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
     </nav>
   );

@@ -3,142 +3,203 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
+// Use your specific Backend URL
+const API_BASE_URL = 'http://localhost:3000/api'; 
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [user, setUser] = useState(null);
   const [address, setAddress] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
 
+  // 1. Load Razorpay Script Safely
   useEffect(() => {
-    // Load Script for Razorpay
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
+    const loadRazorpay = () => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => setIsRazorpayLoaded(true);
+      script.onerror = () => console.error('Razorpay SDK failed to load');
+      document.body.appendChild(script);
+    };
+    loadRazorpay();
+  }, []);
 
-    const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-    if (storedCart.length === 0) {
-      navigate('/cart');
+  // 2. Load Cart & User Data
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    
+    // Check Auth
+    if (!token) {
+      alert("Please login to continue.");
+      navigate('/login');
       return;
     }
-    setCartItems(storedCart);
 
+    // A. Load User
     const storedUser = JSON.parse(localStorage.getItem('user'));
     if (storedUser) {
       setUser(storedUser);
+      // Check Address
       if (storedUser.address) {
         setAddress(storedUser.address);
       } else {
         alert("Please provide a delivery address first.");
         navigate('/checkout');
+        return;
       }
     }
 
-    return () => {
-      document.body.removeChild(script);
-    };
+    // B. Load Cart (Prioritize LocalStorage to prevent redirect issues)
+    const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    if (localCart.length > 0) {
+      setCartItems(localCart);
+    } else {
+      // If local is empty, try DB (Fallback)
+      fetch(`${API_BASE_URL}/orders/cart`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const dbItems = Array.isArray(data) ? data : (data.items || []);
+        if (dbItems.length > 0) {
+          setCartItems(dbItems);
+        } else {
+          // Only redirect if BOTH are empty
+          alert("Your cart is empty.");
+          navigate('/cart');
+        }
+      })
+      .catch(err => console.error("Cart fetch error:", err));
+    }
   }, [navigate]);
 
-  const subTotal = cartItems.reduce(
-    (total, item) => total + item.totalPrice * item.quantity,
-    0
-  );
+  // Calculate Total
+  const subTotal = cartItems.reduce((total, item) => {
+    // If totalPrice is pre-calculated in localCart (price * days * qty), use it directly.
+    // Otherwise, calculate: (price * quantity)
+    // We check item.priceAtBooking (DB) or item.product.price (Local)
+    const price = Number(item.totalPrice || item.priceAtBooking || item.product?.price || 0);
+    const qty = Number(item.quantity || 1);
+    
+    // If totalPrice exists, return that. Else calculate.
+    return total + (item.totalPrice ? Number(item.totalPrice) : (price * qty));
+  }, 0);
+  
   const total = subTotal;
 
-  const handlePayNow = async () => {
+  // 3. Handle Payment
+  const handlePayNow = async (e) => {
+    // [CRITICAL] PREVENT PAGE RELOAD
+    e.preventDefault(); 
+    
+    if (!isRazorpayLoaded) {
+      alert("Razorpay SDK is loading... please wait.");
+      return;
+    }
+
     setIsProcessing(true);
+    const token = localStorage.getItem('token');
 
     try {
-      // 1. INITIATE PAYMENT (Backend checks stock & creates Order)
-      // Note: Ensure your backend URL is correct (e.g., /api/orders/initiate)
-      const response = await fetch('http://localhost:5000/api/orders/initiate', {
+      // [CRITICAL] Prepare Items for Backend
+      // We send this so Backend can create the Order if it doesn't exist yet
+      const itemsPayload = cartItems.map(item => ({
+        productId: item.productId || item.product?.id,
+        quantity: item.quantity,
+        startDate: item.startDate || new Date(),
+        endDate: item.endDate || new Date()
+      }));
+
+      console.log("Initiating Payment with items:", itemsPayload);
+
+      // STEP 1: Create Order on Backend
+      const response = await fetch(`${API_BASE_URL}/orders/initiate`, {
         method: 'POST',
         headers: {
            'Content-Type': 'application/json',
-           'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming you use JWT
+           'Authorization': `Bearer ${token}`
         }, 
-        // We don't need to send body if backend finds DRAFT by userId, 
-        // but sending empty object is safe.
-        body: JSON.stringify({}) 
+        // [CRITICAL] SEND ITEMS IN BODY
+        body: JSON.stringify({ items: itemsPayload }) 
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Failed to initiate payment. Item might be out of stock.");
-        setIsProcessing(false);
-        return;
+        throw new Error(data.error || "Failed to initiate payment");
       }
 
-      // 2. OPEN RAZORPAY MODAL
+      console.log("Order Created:", data);
+
+      // STEP 2: Open Razorpay
       const options = {
-        key: "YOUR_TEST_KEY_ID", // Replace with your Public Test Key ID
+        key: "rzp_test_SAdeEvv7rFnS2e", // <--- REPLACE THIS WITH YOUR KEY
         amount: data.amount,
         currency: data.currency,
         name: "RentalEco",
-        description: "Equipment Rental Payment",
+        description: "Equipment Rental",
         order_id: data.rzpOrderId,
         handler: async function (response) {
+          console.log("Payment Success. Verifying...");
           
-          // 3. VERIFY PAYMENT
+          // STEP 3: Verify
           try {
-            const verifyRes = await fetch('http://localhost:5000/api/orders/verify', {
+            const verifyRes = await fetch(`${API_BASE_URL}/orders/verify`, {
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                dbOrderId: data.dbOrderId // Passed from Step 1
+                dbOrderId: data.dbOrderId
               })
             });
 
             const verifyData = await verifyRes.json();
 
             if (verifyData.success) {
-              // Success! Clear cart and redirect
-              localStorage.removeItem('cart');
-              window.dispatchEvent(new Event('storage')); // Update cart counts elsewhere
-
-              // Pass data for the Receipt Page
-              const orderData = {
-                orderItems: cartItems,
-                subTotal,
-                address,
-                orderId: verifyData.orderId // The new 'ORD-...' ID
-              };
-              
-              navigate('/order-confirmation', { state: orderData });
+              alert("Payment Successful!");
+              localStorage.removeItem('cart'); 
+              window.dispatchEvent(new Event('storage'));
+              navigate('/order-confirmation', { state: { orderId: verifyData.orderId } });
             } else {
-              alert("Payment verification failed. Please contact support.");
+              alert("Verification Failed: " + verifyData.error);
             }
           } catch (error) {
             console.error(error);
-            alert("Server error verifying payment.");
+            alert("Verification Error");
           }
         },
         prefill: {
-          name: data.customer.name,
-          email: data.customer.email,
-          contact: data.customer.contact
+          name: data.customer?.name || "",
+          email: data.customer?.email || "",
+          contact: ""
         },
-        theme: { color: "#0d131c" }
+        theme: { color: "#0d131c" },
+        modal: {
+          ondismiss: function() {
+            setIsProcessing(false);
+          }
+        }
       };
 
       const rzp1 = new window.Razorpay(options);
       rzp1.on('payment.failed', function (response){
         alert("Payment Failed: " + response.error.description);
+        setIsProcessing(false);
       });
       rzp1.open();
 
     } catch (error) {
       console.error("Payment Error:", error);
-      alert("Something went wrong. Please try again.");
-    } finally {
+      alert(error.message);
       setIsProcessing(false);
     }
   };
@@ -149,7 +210,7 @@ const PaymentPage = () => {
 
       <div className="pt-32 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
         
-        {/* Breadcrumb Navigation */}
+        {/* Breadcrumb */}
         <div className="mb-8 text-sm font-medium text-slate-500 flex items-center gap-2">
           <Link to="/cart" className="hover:text-primary transition-colors">Cart</Link>
           <span className="text-slate-300">/</span>
@@ -160,92 +221,39 @@ const PaymentPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* LEFT COLUMN: Payment Forms */}
+          {/* Payment Info Column */}
           <div className="lg:col-span-2 space-y-8">
             <h2 className="text-2xl font-black text-slate-900">Payment Method</h2>
-
-            {/* Delivery & Billing Summary */}
-            <div className="bg-slate-900 text-white p-6 rounded-2xl relative shadow-xl overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -z-0"></div>
-              
-              <div className="relative z-10 flex justify-between items-start">
-                <div>
-                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-lg text-xs font-bold uppercase tracking-wider mb-3 backdrop-blur-md border border-white/10">
-                     <span className="material-symbols-outlined text-[14px]">local_shipping</span>
-                     Delivery & Billing
-                   </div>
-                   <h3 className="text-xl font-bold mb-1">{user ? `${user.firstName} ${user.lastName}` : 'Guest User'}</h3>
-                   <p className="text-slate-300 text-sm leading-relaxed max-w-md opacity-80 mt-2">
-                     {address ? (
-                       <>
-                         {address.street}<br/>
-                         {address.city} - {address.zip}<br/>
-                         {address.country}
-                       </>
-                     ) : (
-                       <span className="text-red-400">No address provided</span>
-                     )}
-                   </p>
-                </div>
-                <button 
-                  onClick={() => navigate('/checkout')}
-                  className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-colors border border-white/10"
-                  title="Edit Address"
-                >
-                  <span className="material-symbols-outlined text-white text-[20px]">edit</span>
-                </button>
-              </div>
+            
+            {/* Address Summary */}
+            <div className="bg-slate-900 text-white p-6 rounded-2xl relative shadow-xl overflow-hidden">
+               <h3 className="text-xl font-bold mb-1">{user ? `${user.firstName} ${user.lastName}` : 'User'}</h3>
+               <p className="text-slate-300 text-sm mt-2">
+                 {address ? `${address.street}, ${address.city} - ${address.zip}` : "No Address"}
+               </p>
             </div>
 
-            {/* Note about Razorpay */}
+            {/* Razorpay Banner */}
             <div className="glass-panel p-6 rounded-2xl border border-blue-200 bg-blue-50/50">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  R
-                </div>
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">R</div>
                 <div>
                   <h4 className="font-bold text-slate-900">Secure Payment via Razorpay</h4>
-                  <p className="text-xs text-slate-500">You will be redirected to a secure popup to complete your payment.</p>
+                  <p className="text-xs text-slate-500">Redirecting to secure payment gateway...</p>
                 </div>
               </div>
             </div>
-
           </div>
 
-          {/* RIGHT COLUMN: Order Summary */}
+          {/* Order Summary Column */}
           <div className="lg:col-span-1">
             <div className="bg-white p-8 rounded-3xl sticky top-32 shadow-xl border border-slate-100">
-              
               <h3 className="text-lg font-bold text-slate-900 mb-6">Order Summary</h3>
-
-              {/* Product Preview (Primary Item) */}
-              <div className="mb-6 flex gap-4">
-                 <div className="w-16 h-16 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0">
-                    {cartItems.length > 0 && cartItems[0].product && (
-                      <img src={cartItems[0].product.image} alt="Product" className="w-full h-full object-cover" />
-                    )}
-                 </div>
-                 <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-500 font-bold uppercase mb-0.5">Primary Item</p>
-                    <h4 className="font-bold text-slate-900 text-sm line-clamp-1">
-                      {cartItems.length > 0 ? cartItems[0].product.name : 'No Items'}
-                    </h4>
-                    {cartItems.length > 1 && (
-                      <p className="text-xs font-bold text-primary mt-1">+{cartItems.length - 1} other items</p>
-                    )}
-                 </div>
-              </div>
-
-              <div className="h-px bg-slate-100 my-6"></div>
-
+              
               <div className="space-y-3 mb-8">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Sub Total</span>
-                  <span className="text-slate-900 font-medium">₹{subTotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Delivery Charges</span>
-                  <span className="text-green-600 font-medium">Free</span>
+                  <span className="text-slate-500">Items</span>
+                  <span className="text-slate-900 font-medium">{cartItems.length}</span>
                 </div>
                 <div className="h-px bg-slate-100 my-2"></div>
                 <div className="flex justify-between text-lg font-black text-slate-900">
@@ -254,27 +262,18 @@ const PaymentPage = () => {
                 </div>
               </div>
 
-              {/* Pay Now Button */}
+              {/* PAY NOW BUTTON */}
               <button 
+                type="button" // <--- CRITICAL: Prevents Form Submission/Reload
                 onClick={handlePayNow}
-                disabled={isProcessing}
-                className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all mb-6 flex items-center justify-center gap-2 shadow-lg hover:shadow-slate-900/20 disabled:opacity-70 disabled:cursor-not-allowed group"
+                disabled={isProcessing || !isRazorpayLoaded}
+                className="w-full py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all mb-6 flex items-center justify-center gap-2 shadow-lg hover:shadow-slate-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isProcessing ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : (
-                  <>
-                    Pay Now
-                    <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                  </>
-                )}
+                {isProcessing ? "Processing..." : "Pay Now"}
               </button>
 
-              {/* Back Link */}
-              <div className="text-center flex items-center justify-center gap-3">
-                <span className="text-slate-300 text-xs uppercase font-bold tracking-wider">OR</span>
-                <Link to="/checkout" className="text-slate-500 text-sm font-bold hover:text-slate-900 transition-colors inline-flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              <div className="text-center">
+                <Link to="/checkout" className="text-slate-500 text-sm font-bold hover:text-slate-900 transition-colors">
                   Back to Address
                 </Link>
               </div>
