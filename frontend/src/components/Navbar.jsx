@@ -136,9 +136,6 @@ function Navbar() {
 
         {/* Right Icons */}
         <div className="flex items-center gap-1 sm:gap-2">
-<<<<<<< HEAD
-          {/* Wishlist Link */}
-=======
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleTheme}
@@ -151,7 +148,6 @@ function Navbar() {
           </button>
 
           {/* Wishlist Link (Updated) */}
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
           <Link 
             to="/wishlist" 
             className="p-2 sm:p-2.5 text-slate-600 dark:text-slate-300 hover:text-red-500 transition-all duration-300 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 group relative block"

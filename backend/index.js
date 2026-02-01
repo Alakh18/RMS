@@ -28,16 +28,12 @@ app.use(express.json());
 // 2. ROUTES
 // ==========================================
 app.use('/api/auth', authRoutes);
-<<<<<<< HEAD
-app.use('/api/orders', orderRoutes);
-=======
 
 // Orders and admin routes
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Vendor routes (protected by vendorAuth middleware)
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/products', require('./routes/productRoutes'));
 

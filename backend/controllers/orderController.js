@@ -90,15 +90,10 @@ const addToCart = async (req, res) => {
       }
     });
 
-<<<<<<< HEAD
-    res.json({ message: 'Item added to cart', orderId: order.id });
-=======
     // Recalculate Order Total & Dates
     await recalcOrderTotals(prisma, order.id);
+    res.json({ message: 'Item added to cart', orderId: order.id });
 
-    res.json({ message: 'Item added to quotation', orderId: order.id });
-
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
   } catch (error) {
     console.error("Add to Cart Error:", error);
     res.status(500).json({ error: 'Failed to add item to cart' });
@@ -106,9 +101,6 @@ const addToCart = async (req, res) => {
 };
 
 // ==========================================
-<<<<<<< HEAD
-// 2. INITIATE PAYMENT (Fixes "No Cart" Error)
-=======
 // 1B. SUBMIT QUOTATION (Move DRAFT -> SENT)
 // ==========================================
 const submitQuotation = async (req, res) => {
@@ -147,16 +139,12 @@ const submitQuotation = async (req, res) => {
 
 // ==========================================
 // 2. CONFIRM ORDER (The "Double Booking" Check)
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
 // ==========================================
 const initiatePayment = async (req, res) => {
   try {
     const userId = req.user.userId;
-<<<<<<< HEAD
     const { items: frontendItems } = req.body; 
-=======
     let confirmedOrder = null;
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
 
     // A. Check for existing DB Order
     let order = await prisma.order.findFirst({
@@ -198,7 +186,6 @@ const initiatePayment = async (req, res) => {
         }
       }
 
-<<<<<<< HEAD
       order = await prisma.order.create({
         data: {
           customerId: userId,
@@ -222,6 +209,7 @@ const initiatePayment = async (req, res) => {
       notes: { customerId: userId, orderId: order.id }
     });
 
+
     res.json({
       success: true,
       rzpOrderId: rzpOrder.id,
@@ -234,55 +222,6 @@ const initiatePayment = async (req, res) => {
         contact: ""
       }
     });
-=======
-      // 3. Recalculate totals and order dates before confirmation
-      await recalcOrderTotals(tx, orderId);
-
-      // 4. If the loop finishes, it means STOCK IS AVAILABLE.
-      // Update status to CONFIRMED (This reserves the stock)
-      const updatedOrder = await tx.order.update({
-        where: { id: orderId },
-        data: { 
-          status: 'CONFIRMED',
-          orderNumber: `ORD-${Date.now()}` // Change ID from QTN to ORD
-        }
-      });
-      confirmedOrder = updatedOrder;
-
-      // 5. Create Invoice and Payment record if not exists
-      const existingInvoice = await tx.invoice.findFirst({
-        where: { orderId: updatedOrder.id }
-      });
-
-      if (!existingInvoice) {
-        const invoice = await tx.invoice.create({
-          data: {
-            orderId: updatedOrder.id,
-            invoiceNumber: `INV-${Date.now()}`,
-            status: 'PAID',
-            totalAmount: updatedOrder.totalAmount,
-            paidAmount: updatedOrder.totalAmount,
-            balanceAmount: 0,
-            dueDate: new Date(),
-          }
-        });
-
-        await tx.payment.create({
-          data: {
-            invoiceId: invoice.id,
-            amount: updatedOrder.totalAmount,
-            method: 'CARD',
-            transactionId: `PAY-${Date.now()}`,
-          }
-        });
-      }
-      
-      // 4. (Optional) Create Invoice here automatically
-      // await tx.invoice.create({ ... })
-    });
-
-    res.json({ success: true, message: 'Order Confirmed! Stock Reserved.', orderId, orderNumber: confirmedOrder?.orderNumber });
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
 
   } catch (error) {
     console.error("Payment Init Error:", error);
@@ -291,7 +230,6 @@ const initiatePayment = async (req, res) => {
 };
 
 // ==========================================
-<<<<<<< HEAD
 // 3. VERIFY PAYMENT
 // ==========================================
 const verifyOrder = async (req, res) => {
@@ -317,7 +255,10 @@ const verifyOrder = async (req, res) => {
   } catch (error) {
     console.error("Verify Error", error);
     res.status(500).json({ error: "Verification failed" });
-=======
+  }
+};
+
+// ==========================================
 // 2B. PAY CONFIRMED QUOTATION
 // ==========================================
 const payOrder = async (req, res) => {
@@ -365,14 +306,10 @@ const payOrder = async (req, res) => {
   } catch (error) {
     console.error('Pay Order Error:', error);
     res.status(500).json({ error: 'Failed to record payment' });
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
   }
 };
 
 // ==========================================
-<<<<<<< HEAD
-// 4. GET MY CART
-=======
 // 3B. GET QUOTATION STATUS (Customer)
 // ==========================================
 const getQuotationStatus = async (req, res) => {
@@ -408,7 +345,6 @@ const getQuotationStatus = async (req, res) => {
 
 // ==========================================
 // 3. VIEW QUOTATION
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
 // ==========================================
 const getMyCart = async (req, res) => {
   try {
@@ -424,14 +360,13 @@ const getMyCart = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 // [!] CRITICAL: EXPORT ALL FUNCTIONS
-module.exports = { 
-  addToCart, 
-  initiatePayment, 
-  verifyOrder, 
-  getMyCart 
+module.exports = {
+  addToCart,
+  submitQuotation,
+  initiatePayment,
+  verifyOrder,
+  payOrder,
+  getQuotationStatus,
+  getMyCart
 };
-=======
-module.exports = { addToCart, confirmOrder, getMyCart, submitQuotation, getQuotationStatus, payOrder };
->>>>>>> 35915921eef5e05f2c0808d4cbd1daf9d464fdce
